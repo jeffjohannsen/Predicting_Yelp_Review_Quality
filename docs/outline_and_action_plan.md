@@ -92,3 +92,37 @@
 ## Wednesday Goals
 
 ## Thursday Goals
+
+## Notes
+
+Question Selection
+
+Predicting review usefulness at time of posting.
+* Business Case
+    * Yelp can optimally surface reviews in real time instead of waiting on users to vote on the review usefullness. 
+    * Allows Yelp reviews to keep up with changes in the business quality instead of lagging behind it. Like reddit's hot feed instead of the top feed.
+    * Bayesian updating of review quality over time from initial review usefulness rating. Updated based on any "useful", "funny", and "cool" votes and time passed. Helps correct for wrong guesses.
+    * TARGET: Composite of review "useful", "funny", and "cool". Time discounted.
+    * FEATURES:
+        * Review:
+            * Review text
+            * Star Rating
+            * Date/Time
+        * User
+            * Review Count
+            * User Yelp Join Date/Time
+            * "Elite" - Count and time span since last
+            * Friend Count
+            * Fans Count
+            * Average Ratings - +Difference between review rating and average review rating
+            * Compliment counts (Multiple) Composite?
+            * Time discounted "useful", "funny", and "cool" counts (User start to review date to current data)
+        * Business
+            * Stars +Difference between review stars and overall stars
+            * Review Count
+            * Location
+            * Categories
+            * Price Range
+            * Checkin Count from Checkins
+
+        * Tips could also be evaluated easier (less text)
