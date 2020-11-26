@@ -13,7 +13,7 @@ Yelp and other similar companies like Foursquare, Google Places, TripAdvisor, et
 Working with and better understanding the data available to these companies will help us to more fully take advantage of these opportunities.
 
 ## QUESTION, GOAL, and FOCUS
-Find interesting patterns and relationships within the data. 
+The goal of this project is to determine which Yelp reviews to surface to users in close to real time. The ability for Yelp to showcase its most useful reviews as they happen allows Yelp to provide the most up to date information to its users which increases user satisfaction, retention, and value to the company. 
 
 ## DATA
 
@@ -37,10 +37,15 @@ This dataset consists of 5 seperate json files totaling ~10GB of data uncompress
 
 ## Minimum Viable Product
 * Practice, Improve, and Showcase specific data science skills:
-    * Data Visualization/Storytelling, Random Forest, Boosted Trees
-* 
+    * Data Visualization/Storytelling, Random Forest, Boosted Trees, Data Pipeline Creation, Feature Engineering, Database Management, Cloud Computing (AWS).
+* Collect, clean and organize data in a easily searchable database (Postgres) by creating a pipeline.
+* Explore and visualize interesting relationships within the data.
+* Create a target variable based off a time adjusted number of useful votes on a review.
+* Collect, create, and organize features for predicting the target value. Features come from metadata surrounding the review, reviewer (user), and business being reviewed.
+* Utilize Random Forest, Boosted Trees, and other machine learning models to predict the target from the features.
 
 ## MVP+
 * Practice, Improve, and Showcase specific data science skills:
-    * Neural Networks, Data Pipeline Creation, Feature Engineering
-* 
+    * Neural Networks, Natural Language Processing (NLP)
+* Expand features by exploring review text using NLP techniques.
+* Utilize neural networks to model and predict.

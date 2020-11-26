@@ -1,14 +1,16 @@
 # Outline and Action Plan
 
 * Getting the Data
-    * Locating Data Sources
-    * Setting Data Collection Methods and Code
+    * Locating Data Sources 
+        * Yelp Open Dataset JSON files
     * Bringing in the Data and Data Storage
+        * JSON to Mongo to Pandas to PostgresSQL pipeline
 * EDA
 * Data Munging
     * Combine
     * Clean
     * Organize
+* Feature Engineering
 * Data Visualization
 * Data Pipeline Creation - Probably a Class
 * Questions and Goals
@@ -48,14 +50,14 @@
 |Item                                                           |Time Budget|Actual Time Use|
 |:---|:---:|:---:|
 |**Getting the Data**                                               |      |     |
-|Locating Data Sources                                          |      |     |
-|Setting Data Collection Methods and Code                       |      |     |
-|Bringing in the Data and Data Storage                          |      |     |
+|Locating Data Sources                                          |      | Low - 30 min.   |
+|Bringing in the Data and Data Storage                          |      | Very High - 2 days|
 |**EDA**                                                            |      |     |
 |Data Munging                                                   |      |     |
 |Combine                                                        |      |     |
 |Clean                                                          |      |     |
 |Organize                                                       |      |     |
+|**Feature Engineering**                                        |      |     |
 |**Data Visualization**                                             |      |     |
 |**Data Pipeline Creation - Probably a Class**                      |      |     |
 |**Questions and Goals**                                            |      |     |
@@ -83,19 +85,48 @@
 |Practice Read-throughs                                         |      |     |
 |Utilize Public Speaking Template                               |      |     |
 
+## Solo Week
+
+## Thursday Goals
+
+1. Relax for Thanksgiving
+
+## Friday Goals
+
+1. EDA, Feature Engineering
+
+## Saturday Goals
+
+1. EDA, Feature Engineering
+2. Pipeline Creation, Data Visualization
+
+## Sunday Goals
+
+1. Pipeline Creation, Data Visualization
+
 ## Final Week
 
 ## Monday Goals
 
+1. Machine Learning Models
+
 ## Tuesday Goals
+
+1. Machine Learning Models
 
 ## Wednesday Goals
 
+1. Readme Finalization
+2. Github Repo Finalization
+3. Code Organization and Documentation Finalization
+4. Read Through Requirements and Rubric
+
 ## Thursday Goals
 
-## Notes
+1. Practice Presentation
+2. Public Speaking Checklist
 
-Question Selection
+## Notes
 
 Predicting review usefulness at time of posting.
 * Business Case
