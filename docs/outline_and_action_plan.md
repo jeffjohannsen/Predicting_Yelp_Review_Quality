@@ -53,9 +53,9 @@
 |Locating Data Sources                                          |      | Low - 30 min.   |
 |Bringing in the Data and Data Storage                          |      | Very High - 2 days|
 |**EDA**                                                            |      |     |
-|Data Munging                                                   |      |     |
-|Combine                                                        |      |     |
-|Clean                                                          |      |     |
+|Data Munging                                                   |      | Low - 2 hours    |
+|Combine                                                        |      | High - 1 day   |
+|Clean                                                          |      | Low - 2 hours    |
 |Organize                                                       |      |     |
 |**Feature Engineering**                                        |      |     |
 |**Data Visualization**                                             |      |     |
