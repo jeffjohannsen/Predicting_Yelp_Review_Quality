@@ -1,4 +1,4 @@
-![=Header Image=](images/)
+![=Header Image=](images/header_image.jpg)
 
 # Predicting Yelp Review Usefullness
 
