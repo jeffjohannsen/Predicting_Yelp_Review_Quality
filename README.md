@@ -52,7 +52,7 @@ The data for this project comes from the Yelp Open Dataset.
 
 ![Yelp About the Dataset](images/yelp_dataset_homepage_bottom.png)
 
-This dataset consists of 5 seperate json files totaling ~10GB of data uncompressed. Overall there is a mix of datatypes. The major ones are long text strings, datetimes, booleans, and numerical counts/ratings. Plenty of nan/null values but this is partially offset by the size of the dataset. The five files consist of:
+This dataset consists of 5 separate json files totaling ~10GB of data uncompressed. Overall there is a mix of datatypes. The major ones are long text strings, date-times, booleans, and numerical counts/ratings. Plenty of nan/null values but this is partially offset by the size of the dataset. The five files consist of:
 * **Users**- ~2 million rows and 22 features
     * User metadata, list of friends, and stats about interactions with other users.
 * **Reviews**- ~8 million reviews with 9 features.
@@ -69,7 +69,7 @@ This dataset consists of 5 seperate json files totaling ~10GB of data uncompress
 
 # Data Storage
 
-My original data came in 5 json files. The first step was to simplify, combine, and store these files in a way that would be easily queryable for future data analysis, cleaning, and feature engineering. Using the tools below I converted the original json files into a Postgres database table that could be easily accessed using Pandas.
+My original data came in 5 json files. The first step was to simplify, combine, and store these files in a way that would be easily searchable for future data analysis, cleaning, and feature engineering. Using the tools below I converted the original json files into a Postgres database table that could be easily accessed using Pandas.
 
 ![Data Storage Process](images/data_storage_process.png)
 
@@ -96,7 +96,7 @@ The original working data was not going to be very usable for analysis and machi
 The main data cleaning steps included:
 * Dropping Nan/Null Values 
 * Removing Duplicate Records
-* Deleting Unecessary Features
+* Deleting Unnecessary Features
 * Converting Datatypes
 * Organizing Features
 
@@ -159,7 +159,7 @@ Later - Precision and Accuracy
 ## Can the quality of a review be determined by data surrounding the review?
 
 ## Model Results
-Tested a lot of different hyperperameters but couldn't get the test accuracy to move very much beyond what was provided by the default values.  
+Tested a lot of different hyperparameters but couldn't get the test accuracy to move very much beyond what was provided by the default values.  
 My changes only really moved the training accuracy.  
 The best performing model was created using: 100000 records, 100 trees, unrestricted depth and leaf nodes.   
 
@@ -202,7 +202,7 @@ Unfortunately, this reduced my accuracy from ~71% to ~65%.
 
 # Next Steps
 
-Improve the abilty to predict review quality by:
+Improve the ability to predict review quality by:
 * Streamlining the data storage and cleaning pipeline.
 * Utilizing NLP to explore the text of the reviews.
 * Collecting current data via the Yelp API.
