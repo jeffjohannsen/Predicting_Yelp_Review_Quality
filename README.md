@@ -7,8 +7,6 @@
     * [Motivation](#Motivation)
     * [Goal and Central Questions](#Goal-and-Central-Questions)
     * [The Data](#The-Data)
-    * [Business Use Case](#Business-Use-Case)
-    * [Central Questions](#Central-Questions)
 * [Data Storage](#Data-Storage)
 * [Data Pipeline](#Data-Pipeline)
 * [Data Analysis](#Data-Analysis)
