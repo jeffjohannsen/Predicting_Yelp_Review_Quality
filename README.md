@@ -21,8 +21,9 @@
 ## Motivation
 
 I have a personal and professional interest in the leisure/tourism industry with a focus on two things:
-1. The perceived quality and popularity of places and points of interest. 
-    * Examples: Restaurants, Bars/Nightlife, Breweries, Music Venues, Parks and Outdoor Spaces. Very broad focus. Pretty much anything that involves the combination of leisure and being in public.
+1. The perceived quality and popularity of places and points of interest (POIs). 
+    * Examples: Restaurants, Bars/Nightlife, Breweries, Music Venues, Parks and Outdoor Spaces. 
+    * Very broad focus. Pretty much anything that involves the combination of leisure and being in public.
 2. Creating a way to connect people to these places/POIs in a way that is more beneficial to both the places/POIs and the people than current common methods. 
 
 Yelp and other similar companies like Foursquare, Google Places, TripAdvisor, etc. are the current leaders in this space, though I believe there are substantial untapped opportunities in this space.
@@ -52,16 +53,16 @@ The data for this project comes from the Yelp Open Dataset.
 
 ![Yelp About the Dataset](images/yelp_dataset_homepage_bottom.png)
 
-This dataset consists of 5 separate json files totaling ~10GB of data uncompressed. Overall there is a mix of datatypes. The major ones are long text strings, date-times, booleans, and numerical counts/ratings. Plenty of nan/null values but this is partially offset by the size of the dataset. The five files consist of:
+This dataset consists of 5 separate json files totaling ~10GB of data uncompressed. Overall, there is a mix of data-types. The most common ones include long text strings, date-times, booleans, and numerical counts/ratings. There are plenty of nan/null values but this is partially offset by the size of the dataset. The five files consist of:
 * **Users**- ~2 million rows and 22 features
     * User metadata, list of friends, and stats about interactions with other users.
 * **Reviews**- ~8 million reviews with 9 features.
-    * 8 review metadata features and the review content.
-* **Checkins**- ~175000 businesses represented. Looks like a couple million total date-times. 
-    * Dates and times for check-ins for each business. 
+    * 8 review metadata features and the review text.
+* **Check-ins**- ~175000 businesses represented. A couple million total date-times. 
+    * Date-times for check-ins for each business. 
 * **Businesses**- ~210000 rows with around 30 total features.
     * Business name, address, hours, rating, review count, etc. 
-    * Also includes dictionaries of more in depth attributes like cost, accepts credit cards, good for kids, etc.
+    * Also includes dictionaries of more in-depth attributes like cost, accepts credit cards, good for kids, etc.
 * **Tips**- ~1.3 million rows with 5 features
     * Kind of like a really short review without as much useful metadata.
 
@@ -97,21 +98,21 @@ The main data cleaning steps included:
 * Dropping Nan/Null Values 
 * Removing Duplicate Records
 * Deleting Unnecessary Features
-* Converting Datatypes
+* Converting Data-types
 * Organizing Features
 
 ## Feature Engineering
 
-Features added included:
+Features added include:
 * Sums
-    * User Upvotes
+    * User Up-votes
     * User Compliments
 * Counts
     * User Friends Count
-    * User Elite Count
-    * Restaurant Checkin Count
+    * User Elite Award Count
+    * Restaurant Check-in Count
 * Time Based
-    * User Years Since Last Elite
+    * User Years Since Last Elite Award
     * User Days Active at Review Time
 * Composites
     * Review Stars vs. User Average
@@ -148,10 +149,10 @@ Now - Accuracy
 
 Later - Precision and Accuracy 
 * Typically only a couple reviews are shown to a user.
-* If a review that is not quality ends up being predicted as quality (a false positive) and then is surfaced out of hundreds of reviews. That is a pretty big failure.
-* As the total number of reviews to chose from grows the more costly a false positive becomes and the less costly a false negative becomes.
+* If a review that is not quality ends up being predicted as quality (a false positive) and then is surfaced out of hundreds of possible reviews. That is a pretty big failure.
+* As the total number of reviews to choose from grows, the more costly a false positive becomes and the less costly a false negative becomes.
 * In general the threshold will need to raised to help lower false positives.
-* Specifically the threshold should be a function of the number of reviews to surface and the total number of reviews to choose from.
+* Specifically the threshold should be a function of the number of reviews to be surfaced and the total number of reviews to choose from.
     * The quality of a review is not necessarily relative.
     * The standard for choosing a review is relative.
 
@@ -165,7 +166,7 @@ The best performing model was created using: 100000 records, 100 trees, unrestri
 
 <img src="images/model_results.png" alt="Model Results" width="1000" height="600"/>
 
-## Feature Importances
+## Feature Importance
 
 ## Central Question 2:
 ## What types of data are most useful for predicting review quality?
@@ -175,14 +176,14 @@ The data being used for prediction falls into three categories:
 * Data about the user that created the review.
 * Data about the restaurant being reviewed.
 
-The typical way to answer this sort of question with a random forest is using feature importances.
+The typical way to answer this sort of question with a random forest is using feature importance.
 
-<img src="images/feature_importances.png" alt="Feature Importances" width="1000" height="600"/>
+<img src="images/feature_importances.png" alt="Feature Importances" width="900" height="600"/>
 
-Basic feature importances may not be able to be used due to high cardinality of a lot of the features. (Large number of possible values for a lot of the numeric features.)   
-Permutation importances can be used to correct for this.  
+Basic feature importance may not be able to be used due to high cardinality of a lot of the features. (Large number of possible values for a lot of the numeric features.)   
+Permutation importance can be used to correct for this.  
 
-<img src="images/permutation_importances.png" alt="Permutation Importances" width="1000" height="600"/>
+<img src="images/permutation_importances.png" alt="Permutation Importances" width="900" height="600"/>
 
 Permutation importance can be inaccurate when there is high correlation between features.  
 Hierarchical clustering of Spearman rank-order correlations can be used to remove correlated features.  
@@ -191,12 +192,11 @@ Unfortunately, this reduced my accuracy from ~71% to ~65%.
 <br/><br/>
 
 # Conclusions
-### The quality of reviews can be determined by the data surrounding the review with an accuracy better than chance.
-### Data about the users is the most important to consider when predicting the quality of a review. (Of data types reviewed)
-### More analysis needs to be completed to improve prediction results.
+### 1. The quality of reviews can be determined by the data surrounding the review with an accuracy better than chance.
+### 2. Data about the users is the most important to consider when predicting the quality of a review. (Of data types reviewed)
+### 3. More analysis needs to be completed to improve prediction results.
 
-### Knowing that quality of reviews can be predicted as well as which pieces of data are the most important for these predictions is a stepping stone for helping Yelp and similar companies to better surface reviews that improve user retention, engagement and satisfaction.
-### Unfortunately, at this time the magnitude of this knowledge is not large enough to encourage significant action, though this will be improved in the near future.  
+Knowing that the quality of reviews can be predicted, as well as which pieces of data are the most important for these predictions is a stepping stone for helping Yelp and similar companies to better surface reviews that improve user retention, engagement and satisfaction. Unfortunately, at this time the magnitude of this knowledge is not large enough to encourage significant action, though this will be improved upon in the near future.  
 
 <br/><br/>
 
