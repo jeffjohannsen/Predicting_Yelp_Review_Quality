@@ -203,6 +203,7 @@ Knowing that the quality of reviews can be predicted, as well as which pieces of
 # Next Steps
 
 Improve the ability to predict review quality by:
+* Exploring the data more thoroughly (EDA).
 * Streamlining the data storage and cleaning pipeline.
 * Utilizing NLP to explore the text of the reviews.
 * Collecting current data via the Yelp API.
