@@ -5,14 +5,13 @@
 ## Table of Contents
 * [Introduction](#Introduction)
     * [Motivation](#Motivation)
+    * [Goal and Central Questions](#Goal-and-Central-Questions)
     * [The Data](#The-Data)
     * [Business Use Case](#Business-Use-Case)
     * [Central Questions](#Central-Questions)
 * [Data Storage](#Data-Storage)
 * [Data Pipeline](#Data-Pipeline)
 * [Data Analysis](#Data-Analysis)
-    * [Logistic Regression](#Logistic-Regression)
-    * [Random Forest](#Random-Forest)
 * [Conclusions](#Conclusions)
 * [Next Steps](#Next-Steps)
 * [Photo and Data Credits](#Photo-and-Data-Credits)
@@ -31,19 +30,13 @@ I have a personal and professional interest in the leisure/tourism industry with
 Yelp and other similar companies like Foursquare, Google Places, TripAdvisor, etc. are the current leaders in this space, though I believe there are substantial untapped opportunities in this space.
 Working with and better understanding the data available to these companies will help us to more fully take advantage of these opportunities.
 
-## Business Use Case
+## Goal and Central Questions
 
-=Fix This Section=
+The goal of this project is to explore a way to increase user retention, satisfaction, and engagement for Yelp and any other company that incorporates reviews within its platform. These improvements will be accomplished by surfacing the highest quality reviews via information gained from the data surrounding those reviews.
 
-* Yelp can optimally surface reviews in real time instead of waiting on users to vote on the review quality. 
-* Allows Yelp reviews to keep up with changes in the business quality instead of lagging behind it. 
-* Like reddit's hot feed instead of the top feed.
-* The ability for Yelp to showcase its most useful reviews as they happen allows Yelp to provide the most up to date information to its users which increases user satisfaction, retention, and value to the company. 
-
-## Central Questions
+### Central Questions
 ### 1. Can the quality of a review be determined by data surrounding the review?
 ### 2. What types of data are most useful for predicting review quality?
-### 3. What model is the best for predicting the quality of a review?
 
 ## The Data
 
@@ -130,41 +123,81 @@ Features added included:
 
 # Data Analysis
 
-## Central Questions:
-### Can the quality of a review be determined by data surrounding the review?
-### What types of data are most useful for predicting review quality?
-### What model is the best for predicting the quality of a review?
+## Model Choice: Random Forest Classifier
+
+Why?
+1. Easy to setup and work with.
+2. Allowed me to be reasonably confident with the validity of my process and results.
+3. Provided quick feedback on whether the questions were worth pursuing or not.
+
+## Binary Classification 
+
+Two Options:   
+1. The review in question **IS** a quality review. Coded as 1.
+2. The review in question **IS NOT** a quality review. Coded as 0.
+
+## Class Balance
+* The classes are very close to equal.
+* 49% of reviews are quality.
+* 51% of reviews are not quality. 
+
+## Model Performance Metrics and Decision Threshold
+
+Now - Accuracy
+* Most common and well understood metric. Best for an initial proof of concept. 
+* If the model is not accurate enough then the second central question about feature importances is not worthwhile. 
+* Default 0.5 threshold. Again to get a feel for if the central question is reasonable.
+
+Later - Precision and Accuracy 
+* Typically only a couple reviews are shown to a user.
+* If a review that is not quality ends up being predicted as quality (a false positive) and then is surfaced out of hundreds of reviews. That is a pretty big failure.
+* As the total number of reviews to chose from grows the more costly a false positive becomes and the less costly a false negative becomes.
+* In general the threshold will need to raised to help lower false positives.
+* Specifically the threshold should be a function of the number of reviews to surface and the total number of reviews to choose from.
+    * The quality of a review is not necessarily relative.
+    * The standard for choosing a review is relative.
+
+## Central Question 1:
+## Can the quality of a review be determined by data surrounding the review?
+
+## Model Results
+Tested a lot of different hyperperameters but couldn't get the test accuracy to move very much beyond what was provided by the default values.  
+My changes only really moved the training accuracy.  
+The best performing model was created using: 100000 records, 100 trees, unrestricted depth and leaf nodes.   
+
+<img src="images/model_results.png" alt="Model Results" width="1000" height="600"/>
+
+## Feature Importances
+
+## Central Question 2:
+## What types of data are most useful for predicting review quality?
 
 The data being used for prediction falls into three categories:
 * Data surrounding the review.
 * Data about the user that created the review.
 * Data about the restaurant being reviewed.
 
-## Basic Analysis
+The typical way to answer this sort of question with a random forest is using feature importances.
 
-=EDA_and_Graphing=
+<img src="images/feature_importances.png" alt="Feature Importances" width="1000" height="600"/>
 
-## Logistic Regression
+Basic feature importances may not be able to be used due to high cardinality of a lot of the features. (Large number of possible values for a lot of the numeric features.)   
+Permutation importances can be used to correct for this.  
 
-=model_prep_and_inputs=
-=model_results= 
-=feature_coefficents_and_p_values=
+<img src="images/permutation_importances.png" alt="Permutation Importances" width="1000" height="600"/>
 
-## Random Forest
-
-=model_prep_and_inputs=
-=model_results=
-=feature_importances=
+Permutation importance can be inaccurate when there is high correlation between features.  
+Hierarchical clustering of Spearman rank-order correlations can be used to remove correlated features.  
+Unfortunately, this reduced my accuracy from ~71% to ~65%.  
 
 <br/><br/>
 
 # Conclusions
-### The quality of reviews can be determined by the data surrounding the review with an accuracy significantly better than chance.
-### .................... are the most important features to consider when predicting the quality of a review.
+### The quality of reviews can be determined by the data surrounding the review with an accuracy better than chance.
+### Data about the users is the most important to consider when predicting the quality of a review. (Of data types reviewed)
 ### More analysis needs to be completed to improve prediction results.
-### Of the two model types tested, the Random Forest model better prediction accuracy compared to Logistic Regression.
 
-### Knowing that quality of reviews can be predicted as well as which pieces of data are the most important for these predictions helps Yelp to better surface reviews that improve user engagement and satisfaction.
+### Knowing that quality of reviews can be predicted as well as which pieces of data are the most important for these predictions is a stepping stone for helping Yelp and similar companies to better surface reviews that improve user retention, engagement and satisfaction.
 ### Unfortunately, at this time the magnitude of this knowledge is not large enough to encourage significant action, though this will be improved in the near future.  
 
 <br/><br/>
