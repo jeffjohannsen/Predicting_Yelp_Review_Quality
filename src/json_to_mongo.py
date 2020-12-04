@@ -3,6 +3,15 @@ import pprint
 
 
 def access_specific_collection(collection_name):
+    """
+    Retrieves specified collection from "yelp" database with mongoDB.
+
+    Args:
+        collection_name (string): Name of collection to be returned.
+
+    Returns:
+        object: Collection
+    """
     client = MongoClient('localhost', 27017)
     db = client.yelp
     business = db.business

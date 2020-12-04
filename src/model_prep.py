@@ -1,4 +1,7 @@
 
+# ! WARNING: Work in progress code that still needs docstrings and testing.
+# TODO: Combine this pipeline with the other code for random forest.
+
 import pandas as pd
 import numpy as np
 import psycopg2
@@ -7,6 +10,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_auc_score
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 
@@ -45,7 +50,8 @@ class ModelPipeline():
     def scale_features(self):
         scalar = StandardScaler()
         feature_names = self.features.columns
-        self.features = pd.DataFrame(scalar.fit_transform(self.features), columns=feature_names)
+        self.features = pd.DataFrame(scalar.fit_transform(self.features),
+                                     columns=feature_names)
 
     def split_data(self, test_size=0.20, random_state=5):
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.features,
@@ -97,6 +103,39 @@ class ModelPipeline():
         ax.set_ylim([-1, self.features.shape[1]])
         plt.show()
 
+    # TODO: Not fully tested yet.
+    def plot_roc_curves(self):
+        log_reg = LogisticRegression(**log_params, random_state=5)
+        log_reg.fit(self.X_train, self.y_train)
+        log_predict_proba = log_reg.predict_proba(self.X_test)
+        log_reg_accuracy_score = log_reg.score(self.X_test, self.y_test)
+        fpr_log, tpr_log, _ = roc_curve(self.y_test, log_predict_proba[:, [0]])
+        log_auc = roc_auc_score(self.y_test, log_predict_proba[:, [0]])
+
+        forest = RandomForestClassifier(**forest_params,
+                                        random_state=5,
+                                        oob_score=True,
+                                        verbose=2
+                                        )
+        forest.fit(self.X_train, self.y_train)
+        forest_predict_proba = forest.predict_proba(self.X_test)
+        forest_accuracy_score = forest.score(self.X_test, self.y_test)
+        fpr_forest, tpr_forest, _ = roc_curve(self.y_test,
+                                              forest_predict_proba[:, [0]])
+        forest_auc = roc_auc_score(self.y_test, forest_predict_proba[:, [0]])
+
+        fig, ax = plt.subplots(figsize=(10, 10))
+        ax.plot([0, 1], [0, 1], 'k--')
+        ax.plot(fpr_log, tpr_log, color='darkorange',
+                label=f'Logistic Regression\n -Area under curve: {log_auc:.2f}\n -Accuracy: {log_reg_accuracy_score:.2f}')
+        ax.plot(fpr_forest, tpr_forest, color='darkorange',
+                label=f'Random Forest\n Area under curve = {forest_auc:.2f}\n -Accuracy: {forest_accuracy_score:.2f}')
+        ax.set_xlabel('False positive rate')
+        ax.set_ylabel('True positive rate')
+        ax.set_title('ROC curve')
+        ax.legend(loc='best')
+        plt.show()
+
 
 def create_classification_data(df):
     data = df.copy()
@@ -132,23 +171,32 @@ if __name__ == "__main__":
     test.prepare_data('TARGET_review_has_upvotes', unused_features)
 
     # Only scale for Logistic
-    test.scale_features()
+    # test.scale_features()
 
     # Always
     test.split_data()
 
     # Logistic
-    test.run_logistic()
+    log_params = dict(penalty='l2',
+                      C=1.0,
+                      solver='lbfgs',
+                      max_iter=100)
+
+    # test.run_logistic()
 
     # Random Forest
-    params = dict(n_estimators=100,
-                  criterion='entropy',
-                  max_depth=None,
-                  max_features='sqrt',
-                  max_leaf_nodes=None,
-                  min_samples_split=2,
-                  min_samples_leaf=1,
-                  min_impurity_decrease=0.0,
-                  max_samples=None)
+    forest_params = dict(n_estimators=100,
+                         criterion='entropy',
+                         max_depth=None,
+                         max_features='sqrt',
+                         max_leaf_nodes=None,
+                         min_samples_split=2,
+                         min_samples_leaf=1,
+                         min_impurity_decrease=0.0,
+                         max_samples=None)
 
     # test.run_random_forest(params)
+
+    # Both ROC Curves
+
+    test.plot_roc_curves()

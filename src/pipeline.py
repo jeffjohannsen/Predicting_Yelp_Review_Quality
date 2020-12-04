@@ -22,20 +22,26 @@ class DataCleaningPipeline():
     def __init__(self, df):
         self.test = df.copy()
 
-    # Set index to review_id (unique identifier for each review)
     def set_index_to_review_id(self):
+        """
+        Set index to review_id (unique identifier for each review)
+        """
         self.test.set_index('review_id', inplace=True, verify_integrity=True)
 
-    # Delete unneeded feature columns.
     def delete_uneeded_features(self):
+        """
+        Delete unneeded feature columns.
+        """
         columns_to_drop = ['restaurant_name', 'restaurant_address',
                            'user_name', 'restaurant_city', 'restaurant_state',
                            'restaurant_postal_code', 'user_id', 'business_id',
                            'restaurant_categories']
         self.test.drop(labels=columns_to_drop, axis=1, inplace=True)
 
-    # Sum columns where more useful than individual columns.
     def create_feature_sums(self):
+        """
+        Sum columns where more useful than individual columns.
+        """
         review_positive_columns = ['review_useful', 'review_funny',
                                    'review_cool']
         user_positive_columns = ['user_useful', 'user_funny', 'user_cool']
@@ -54,17 +60,21 @@ class DataCleaningPipeline():
         self.test.drop(labels=user_positive_columns, axis=1, inplace=True)
         self.test.drop(labels=compliment_columns, axis=1, inplace=True)
 
-    # Split and count list like columns.
     def count_list_features(self):
+        """
+        Split and count list-like columns.
+        """
         self.test['user_friend_count'] = self.test.user_friends.apply(counter)
         self.test['user_elite_count'] = self.test.user_elite.apply(counter)
         self.test['restaurant_checkin_count'] = self.test.restaurant_checkins.apply(counter)
         self.test.drop(labels=['user_friends', 'restaurant_checkins'],
                        axis=1, inplace=True)
 
-    # Years since last user elite.
     # TODO: Simplify and fold into other functions.
     def user_elite_feature(self):
+        """
+        Convert user elite column to years since last elite.
+        """
         self.test['user_elite_most_recent'] = self.test.user_elite.apply(most_recent_elite)
         self.test['user_most_recent_elite'] = pd.to_numeric(self.test['user_elite_most_recent'])
         self.test['user_years_since_last_elite'] = 2020 - self.test['user_most_recent_elite']
@@ -72,7 +82,6 @@ class DataCleaningPipeline():
                         'user_most_recent_elite']
         self.test.drop(labels=delete_elite, inplace=True, axis=1)
 
-    # Drop Nan/Null Values
     '''
     * Restaurant Price Range only column with Nan/Null values.
     * Only a small percentage were Nan/Null
@@ -86,30 +95,27 @@ class DataCleaningPipeline():
         self.test.dropna(inplace=True)
         self.test.drop(self.test[self.test['restaurant_price_range'] == 'None'].index, inplace=True)
 
-    # Convert Data Types
     def convert_data_types(self):
         self.test['user_yelp_start'] = pd.to_datetime(self.test['user_yelping_since'])
         self.test['restaurant_price'] = pd.to_numeric(self.test['restaurant_price_range'])
         unused_features = ['user_yelping_since', 'restaurant_price_range']
         self.test.drop(labels=unused_features, axis=1, inplace=True)
 
-    # Split off review text.
     def split_off_review_text(self):
+        """
+        review_text saved in variable for compatibility with future methods.
+        """
         review_text = self.test['review_text']
         self.test.drop(labels=['review_text'], axis=1, inplace=True)
 
-    # Basic feature engineering.
     def difference_between_star_counts(self):
-        # review_stars - user_average_stars_given
         self.test['review_stars_v_user_avg'] = (self.test['review_stars']
-                                                    - self.test['user_average_stars_given'])
-        # review_stars - restaurant_overall_stars
+                                                - self.test['user_average_stars_given'])
         self.test['review_stars_v_restaurant_avg'] = (self.test['review_stars']
-                                                          - self.test['restaurant_overall_stars'])
+                                                      - self.test['restaurant_overall_stars'])
         self.test['user_days_active_at_review_time'] = (self.test['review_date']
                                                         - self.test['user_yelp_start']).dt.days
 
-    # TARGET - Accounting for time.
     def create_target(self):
         database_creation = pd.to_datetime('2020-3-25 19:13:01')
         self.test['days_since_review'] = (database_creation
@@ -123,7 +129,6 @@ class DataCleaningPipeline():
         self.test.drop(labels=time_related_features_to_drop,
                        inplace=True, axis=1)
 
-    # Organize Data
     def organize_features(self):
         features_ordered = ['TARGET_review_upvotes_time_adjusted',
                             'review_stars', 'review_stars_v_user_avg',
@@ -172,7 +177,6 @@ def most_recent_elite(x):
 
 
 if __name__ == "__main__":
-    # Connection to Postgres Yelp Database - Table: restaurant_reviews_final
     connect = 'postgresql+psycopg2://postgres:password@localhost:5432/yelp'
     engine = create_engine(connect)
 
@@ -184,13 +188,15 @@ if __name__ == "__main__":
     current_chunk_num = 0
     for i in range(int(row_count / chunksize) + 1):
         query = 'SELECT * FROM {table_name} LIMIT {chunksize} OFFSET {offset}'.format(
-            table_name='restaurant_reviews_final', offset=i * chunksize, chunksize=chunksize)
+                table_name='restaurant_reviews_final',
+                offset=i * chunksize, chunksize=chunksize)
 
         chunk = pd.read_sql(query, con=engine)
 
         data = DataCleaningPipeline(chunk)
         data.full_run()
 
-        data.test.to_sql('model_data_1', con=engine, index=True, if_exists='append')
+        data.test.to_sql('model_data_1', con=engine,
+                         index=True, if_exists='append')
         current_chunk_num += 1
         print(f'Save to Postgres Successful - Chunk Number: {current_chunk_num} of {total_chunks}')

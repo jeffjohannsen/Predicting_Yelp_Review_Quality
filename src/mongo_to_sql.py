@@ -1,6 +1,6 @@
 
 # ! WARNING: Memory overload issues very possible. Be careful.
-# TODO: Reorganize code to speed up process.
+# TODO: Reorganize code to speed up process and avoid memory issues.
 
 import json
 from pymongo import MongoClient
@@ -111,7 +111,8 @@ def save_to_postgres(df, yelpdb_table, action='replace', chunksize=5000):
     """
     connect = 'postgresql+psycopg2://postgres:password@localhost:5432/yelp'
     engine = create_engine(connect)
-    df.to_sql(yelpdb_table, con=engine, index=False, if_exists=action, chunksize=chunksize)
+    df.to_sql(yelpdb_table, con=engine, index=False,
+              if_exists=action, chunksize=chunksize)
     print('Save to Postgres Successful')
 
 

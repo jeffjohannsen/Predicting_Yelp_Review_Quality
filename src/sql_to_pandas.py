@@ -1,8 +1,8 @@
 
 # ! WARNING: Memory Usage Overages Very Possible. Be Careful.
+# TODO: Redo most of data storage pipeline to avoid memory overage issues.
 # This file is mostly storage code for queries run in the command line.
 # Quick test of pandas at the end.
-# Switching over to ipynb for data analysis next.
 
 import numpy as np
 import pandas as pd
