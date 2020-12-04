@@ -9,7 +9,7 @@
     * [The Data](#The-Data)
 * [Data Storage](#Data-Storage)
 * [Data Pipeline](#Data-Pipeline)
-* [Data Analysis](#Data-Analysis)
+* [Data Modeling](#Data-Modeling)
 * [Conclusions](#Conclusions)
 * [Next Steps](#Next-Steps)
 * [Photo and Data Credits](#Photo-and-Data-Credits)
@@ -119,7 +119,7 @@ Features added included:
 
 <br/><br/>
 
-# Data Analysis
+# Data Modeling
 
 ## Model Choice: Random Forest Classifier
 
