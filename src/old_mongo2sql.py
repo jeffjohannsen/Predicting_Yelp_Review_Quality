@@ -1,13 +1,16 @@
 
 # ! WARNING: Memory overload issues very possible. Be careful.
-# TODO: Reorganize code to speed up process and avoid memory issues.
+# TODO: Simplify and condense functions.
+# Deprecated code. Use new json2sql.py setup.
+# Current version bypasses MongoDB.
+# This is starter code for returning to MongoDB if necessary.
 
 import json
 from pymongo import MongoClient
 import numpy as np
 import pandas as pd
 from pymongo import collection
-from json_to_mongo import access_specific_collection
+from old_json2mongo import access_specific_collection
 from sqlalchemy import create_engine
 
 
@@ -98,20 +101,21 @@ def trim_columns(df, columns_to_keep):
     return new_df
 
 
-def save_to_postgres(df, yelpdb_table, action='replace', chunksize=5000):
+def save_to_postgres(df, db, table, action='replace', chunksize=5000):
     """
-    Saves a dataframe to the yelp database on postgres.
+    Saves a dataframe to a database on postgres.
 
     Args:
         df (Dataframe): Dataframe to save to postgres sql.
-        yelpdb_table (string): Name of table in database to store dataframe.
+        db (string): Name of database to store dataframe.
+        table (string): Name of table in database to store dataframe.
         action (string): What to do if sql table already exists.
                          Options: replace (Default), append, or fail.
         chunksize (int): Number of rows to save at a time. Default 5000.
     """
-    connect = 'postgresql+psycopg2://postgres:password@localhost:5432/yelp'
+    connect = f'postgresql+psycopg2://postgres:password@localhost:5432/{db}'
     engine = create_engine(connect)
-    df.to_sql(yelpdb_table, con=engine, index=False,
+    df.to_sql(table, con=engine, index=False,
               if_exists=action, chunksize=chunksize)
     print('Save to Postgres Successful')
 
@@ -132,6 +136,72 @@ def load_data_from_json(filepath):
     return data
 
 
+def convert_business_data(columns):
+    """
+    Converts business collection on Mongo
+    to business table on Postgres.
+
+    Args:
+        columns (list): Columns of collection to transfer
+                        to table.
+    """
+    df = load_data_from_mongo('business')
+    df = trim_columns(df, columns)
+    save_to_postgres(df, 'business')
+
+
+def convert_checkin_data(columns):
+    """
+    Converts checkin collection on Mongo
+    to checkin table on Postgres.
+
+    Args:
+        columns (list): Columns of collection to transfer
+                        to table.
+    """
+    df = load_data_from_mongo('checkin')
+    df = trim_columns(df, columns)
+    save_to_postgres(df, 'checkin')
+
+
+# # Overloads memory on inbound and outbound.
+# # Switched to batch upload and downloads to fix.
+def convert_user_data(columns):
+    """
+    Converts user collection on Mongo
+    to user table on Postgres.
+
+    Args:
+        columns (list): Columns of collection to transfer
+                        to table.
+    """
+    df = load_data_from_mongo_in_batches('user', 5000)
+    df = trim_columns(df, columns)
+    save_to_postgres(df, 'user')
+
+
+# Overloads memory even with batch setup.
+# Have to split json into smaller json files.
+def convert_review_data(files, columns):
+    """
+    Converts review collection on Mongo
+    to review table on Postgres.
+
+    Args:
+        files (list): Filenames of split json files to be converted.
+        columns (list): Columns of collection to transfer
+                        to table.
+    """
+    file_num = 0
+    for file in files:
+        filepath = f'../data/full_data/{file}'
+        chunk = load_data_from_json(filepath)
+        chunk = trim_columns(chunk, columns)
+        save_to_postgres(chunk, 'review', action='append', chunksize=100000)
+        file_num += 1
+        print(f'{file} saved to Postgres. {file_num} of {len(files)}')
+
+
 if __name__ == "__main__":
     columns_to_keep_business = ['business_id', 'name', 'address',
                                 'city', 'state', 'postal_code',
@@ -150,28 +220,10 @@ if __name__ == "__main__":
                             'compliment_cool', 'compliment_funny',
                             'compliment_writer', 'compliment_photos']
 
-    # df = load_data_from_mongo('business')
-    # df = trim_columns(df, columns_to_keep_business)
-    # save_to_postgres(df, 'business')
+    # Split review json file in command line.
+    review_file_list = []
 
-    # df2 = load_data_from_mongo('checkin')
-    # df2 = trim_columns(df2, columns_to_keep_checkin)
-    # save_to_postgres(df2, 'checkin')
-
-    # # Overloads memory on inbound and outbound.
-    # # Switched to batch upload and downloads to fix.
-    # df3 = load_data_from_mongo_in_batches('user', 5000)
-    # df3 = trim_columns(df3, columns_to_keep_user)
-    # save_to_postgres(df3, 'user')
-
-    # Overloads memory even with batch setup.
-    # Tried sooo many ways...
-    # Had to split original json into 16 files of 500000 lines each.
-    file_suffix_list = ['00', '01', '02', '03', '04', '05', '06', '07', '08',
-                        '09', '10', '11', '12', '13', '14', '15', '16']
-    for file_suffix in file_suffix_list:
-        filepath = f'../data/full_data/yelp_review_{file_suffix}'
-        chunk = load_data_from_json(filepath)
-        chunk = trim_columns(chunk, columns_to_keep_review)
-        save_to_postgres(chunk, 'review', action='append', chunksize=100000)
-        print(f'File {file_suffix} of 16 saved to Postgres')
+    convert_business_data(columns_to_keep_business)
+    convert_checkin_data(columns_to_keep_checkin)
+    convert_user_data(columns_to_keep_user)
+    convert_review_data(review_file_list, columns_to_keep_review)
