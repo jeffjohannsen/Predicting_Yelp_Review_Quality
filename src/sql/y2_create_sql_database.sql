@@ -36,7 +36,24 @@ ALTER TABLE review_text_only
 ADD PRIMARY KEY (review_id)
 ;
 
-/* Create table of all useful non-review text features.*/
+/* 
+Create table of only user friends.
+Used to create connectivity factors.
+*/
+
+SELECT user_id,
+       friends 
+INTO user_friends
+FROM users
+;
+
+ALTER TABLE user_friends 
+ADD PRIMARY KEY (user_id)
+;
+
+/* 
+Create table of all useful non-review-text features.
+*/
 
 SELECT
     review.review_id          AS review_id,
@@ -53,7 +70,6 @@ SELECT
     business.review_count     AS business_review_count,
     business.is_open          AS business_is_open,
     business.categories       AS business_categories,
-    checkin.date              AS business_checkins,
     users.average_stars       AS user_avg_stars,
     users.review_count        AS user_review_count,
     users.yelping_since       AS user_yelping_since,
@@ -72,8 +88,7 @@ SELECT
     users.compliment_writer   AS user_compliment_writer,
     users.compliment_photos   AS user_compliment_photos,
     users.fans                AS user_fans,
-    users.elite               AS user_elite,
-    users.friends             AS user_friends
+    users.elite               AS user_elite
 INTO all_non_text_features
 FROM review
 INNER JOIN business
