@@ -53,6 +53,8 @@ ADD PRIMARY KEY (user_id)
 
 /* 
 Create table of all useful non-review-text features.
+For use after adding checkin_expanded and
+user_friends_full tables.
 */
 
 SELECT
@@ -70,6 +72,7 @@ SELECT
     business.review_count     AS business_review_count,
     business.is_open          AS business_is_open,
     business.categories       AS business_categories,
+    checkin_expanded.checkin_count AS business_checkin_count,
     users.average_stars       AS user_avg_stars,
     users.review_count        AS user_review_count,
     users.yelping_since       AS user_yelping_since,
@@ -88,8 +91,9 @@ SELECT
     users.compliment_writer   AS user_compliment_writer,
     users.compliment_photos   AS user_compliment_photos,
     users.fans                AS user_fans,
+    user_friends_full.friend_count AS user_friend_count,
     users.elite               AS user_elite
-INTO all_non_text_features
+INTO all_features
 FROM review
 INNER JOIN business
 ON review.business_id = business.business_id
@@ -97,8 +101,31 @@ INNER JOIN users
 ON review.user_id = users.user_id
 JOIN checkin
 ON review.business_id = checkin.business_id
+JOIN user_friends_full
+ON users.user_id = user_friends_full.user_id
+JOIN checkin_expanded
+ON business.business_id = checkin_expanded.business_id
 ;
 
-ALTER TABLE all_non_text_features 
+ALTER TABLE all_features 
 ADD PRIMARY KEY (review_id)
+;
+
+/*
+Create sample of 10000 users
+that have reviewed a business in Toronto.
+Used for testing Graph/Network connectivity.
+*/
+
+SELECT user_friends_full.user_id,
+       user_friends_full.friends,
+       user_friends_full.friend_count
+INTO user_friends_10k
+FROM user_friends_full
+JOIN review
+ON review.user_id = user_friends_full.user_id
+JOIN business
+ON review.business_id = business.business_id
+WHERE business.city = 'Toronto'
+LIMIT 10000
 ;
