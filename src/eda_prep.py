@@ -62,6 +62,8 @@ def expand_checkin_data():
     df['checkin_count'] = df.date.apply(counter)
     df['date_list'] = [pd.to_datetime(x) for x in df.date.str.split(',')]
     df = df.drop('date', axis=1)
+    df['oldest_checkin'] = [min(lst) for lst in df['date_list']]
+    df['most_recent_checkin'] = [max(lst) for lst in df['date_list']]
 
     month_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -83,5 +85,26 @@ def expand_checkin_data():
     save_dataframe_to_yelp_2(df, 'checkin_expanded')
 
 
+def expand_checkin_data_2():
+    """
+    Creates new checkin table in Postgres
+    with only checkin count, oldest checkin,
+    and most recent checkin.
+    """
+    query = '''
+        SELECT business_id,
+               date
+        FROM checkin
+        ;
+        '''
+    df = load_dataframe_from_yelp_2(query)
+    df['checkin_count'] = df.date.apply(counter)
+    df['date_list'] = [pd.to_datetime(x) for x in df.date.str.split(',')]
+    df['oldest_checkin'] = [min(lst) for lst in df['date_list']]
+    df['most_recent_checkin'] = [max(lst) for lst in df['date_list']]
+    df = df.drop(['date', 'date_list'], axis=1)
+    save_dataframe_to_yelp_2(df, 'checkin_expanded_2')
+
+
 if __name__ == "__main__":
-    expand_checkin_data()
+    expand_checkin_data_2()

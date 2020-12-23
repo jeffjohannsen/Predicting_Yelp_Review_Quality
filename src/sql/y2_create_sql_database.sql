@@ -72,7 +72,9 @@ SELECT
     business.review_count     AS business_review_count,
     business.is_open          AS business_is_open,
     business.categories       AS business_categories,
-    checkin_expanded.checkin_count AS business_checkin_count,
+    checkin_expanded_2.checkin_count       AS business_checkin_count,
+    checkin_expanded_2.oldest_checkin      AS business_oldest_checkin,
+    checkin_expanded_2.most_recent_checkin AS business_newest_checkin,
     users.average_stars       AS user_avg_stars,
     users.review_count        AS user_review_count,
     users.yelping_since       AS user_yelping_since,
@@ -103,8 +105,8 @@ JOIN checkin
 ON review.business_id = checkin.business_id
 JOIN user_friends_full
 ON users.user_id = user_friends_full.user_id
-JOIN checkin_expanded
-ON business.business_id = checkin_expanded.business_id
+JOIN checkin_expanded_2
+ON business.business_id = checkin_expanded_2.business_id
 ;
 
 ALTER TABLE all_features 
