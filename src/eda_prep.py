@@ -1,7 +1,12 @@
 
 import numpy as np
 import pandas as pd
+import time
+from pandas._libs.tslibs import Timedelta
 from sqlalchemy import create_engine
+
+from business_checkins import load_dataframe_from_yelp_2, \
+                              save_dataframe_to_yelp_2
 
 
 class EDA_Prep():
@@ -9,6 +14,7 @@ class EDA_Prep():
     def __init__(self, df):
         self.df = df.copy()
         self.dataset_release_date = pd.to_datetime('2020-3-25 19:13:01')
+        self.yelp_founding_date = pd.to_datetime('2004-July-1 00:00:00')
 
     # Helper Functions
 
@@ -40,9 +46,9 @@ class EDA_Prep():
     def years_since_most_recent_elite(self, x):
         z = 0
         if x in ['None', None, '']:
-            z = 0
+            return 100
         else:
-            y = pd.to_numeric(x.split(','))
+            y = list(map(int, x.split(',')))
             z = max(y)
         return 2020 - z
 
@@ -50,21 +56,21 @@ class EDA_Prep():
         if user_elite in ['None', None, '']:
             return 0
         else:
-            split_elites = user_elite.split(',')
+            split_elites = list(map(int, user_elite.split(',')))
             elites_pre_review = [elite for elite in split_elites
-                                 if pd.to_datetime(elite) < review_date]
+                                 if elite <= review_date.year]
             return len(elites_pre_review)
 
     def years_since_most_recent_elite_td(self, user_elite, review_date):
         z = 0
         if user_elite in ['None', None, '']:
-            z = 0
+            return 100
         else:
-            split_elites = pd.to_numeric(user_elite.split(','))
+            split_elites = list(map(int, user_elite.split(',')))
             elites_pre_review = [elite for elite in split_elites
-                                 if pd.to_datetime(elite) < review_date]
+                                 if elite <= review_date.year]
             if len(elites_pre_review) == 0:
-                z = 0
+                return 100
             else:
                 z = max(elites_pre_review)
         return review_date.year - z
@@ -72,14 +78,18 @@ class EDA_Prep():
     def user_time_discount(self, count_feature,
                            user_yelping_since, review_date):
         return (count_feature / (self.dataset_release_date
-                                 - user_yelping_since).days) \
-                * ((review_date - user_yelping_since).days)
+                                 - (user_yelping_since
+                                    - pd.Timedelta(days=1))).days) \
+                * ((review_date - (user_yelping_since
+                                   - pd.Timedelta(days=1))).days)
 
-    def business_time_discount(self, count_feature,
-                               oldest_checkin, review_date):
+    # Need 'business_yelping_since' feature. Don't Have.
+    # Business oldest review would also work. Don't currently have.
+    # Using Yelp company founding data for now.
+    def business_time_discount(self, count_feature, review_date):
         return (count_feature / (self.dataset_release_date
-                                 - oldest_checkin).days) \
-                * ((review_date - oldest_checkin).days)
+                                 - self.yelp_founding_date).days) \
+                * ((review_date - self.yelp_founding_date).days)
 
     # Central Functionality
 
@@ -133,14 +143,14 @@ class EDA_Prep():
     def create_user_elite_basic_features(self):
         self.df['user_elite_count'] = \
             self.df.user_elite.apply(self.count_elite)
-        self.df['user_most_recent_elite'] = \
+        self.df['user_years_since_most_recent_elite'] = \
             self.df.user_elite.apply(self.years_since_most_recent_elite)
 
     def create_user_elite_time_discounted(self):
         self.df['user_elite_count_TD'] = \
             self.df.apply(lambda x: self.count_elite_td(x.user_elite,
                                                         x.review_date), axis=1)
-        self.df['user_most_recent_elite_TD'] = \
+        self.df['user_years_since_most_recent_elite_TD'] = \
             self.df.apply(lambda x:
                           self.years_since_most_recent_elite_td(x.user_elite,
                                                                 x.review_date),
@@ -166,7 +176,6 @@ class EDA_Prep():
             self.df[f'{feature}_TD'] = \
                 self.df.apply(lambda x:
                               self.business_time_discount(x[feature],
-                                                          x.business_oldest_checkin,
                                                           x.review_date),
                               axis=1)
 
@@ -182,11 +191,12 @@ class EDA_Prep():
                             'user_total_ufc', 'user_review_count',
                             'user_friend_count', 'user_fans',
                             'user_compliments', 'user_elite_count',
-                            'user_most_recent_elite', 'user_yelping_since',
+                            'user_years_since_most_recent_elite',
+                            'user_yelping_since',
                             'user_total_ufc_TD', 'user_review_count_TD',
                             'user_friend_count_TD', 'user_fans_TD',
                             'user_compliments_TD', 'user_elite_count_TD',
-                            'user_most_recent_elite_TD',
+                            'user_years_since_most_recent_elite_TD',
                             'T1_REG_review_total_ufc', 'T2_CLS_ufc_>0',
                             'T3_CLS_ufc_level', 'T4_REG_ufc_TD',
                             'T5_CLS_ufc_level_TD', 'T6_REG_ufc_TDBD']
@@ -204,28 +214,38 @@ class EDA_Prep():
         self.organize()
 
 
-def data_prep_in_chunks_sql():
+def data_prep_in_chunks_sql(chunksize, in_table, out_table, pipeline):
     """
     Runs all_features table through
     EDA_Prep pipeline in chunks.
     Bypasses pandas chunksize issues
     as chunks are created in SQL.
     Provides a progress printout.
+
+    Args:
+        chunksize (int): Number of records per chunk.
+        in_table (str): Name of inbound yelp_2 table.
+                        To load from.
+        out_table (str): Name of outbound yelp_2 table.
+                         To save to.
+        pipeline (class): Class that runs all functions on
+                          the input data.
+                          Must have a .run_all() method.
     """
     connect = 'postgresql+psycopg2://postgres:password@localhost:5432/yelp_2'
     engine = create_engine(connect)
 
-    chunksize = 500000
-    table_name = 'all_features'
-    row_count = int(pd.read_sql(f'SELECT COUNT(*) FROM {table_name}',
+    row_count = int(pd.read_sql(f'SELECT COUNT(*) FROM {in_table}',
                                 engine).values)
 
     total_chunks = int(row_count / chunksize) + 1
     current_chunk_num = 0
     for i in range(int(row_count / chunksize) + 1):
+        st = time.perf_counter()
         query = f'''
                  SELECT *
-                 FROM {table_name}
+                 FROM {in_table}
+                 ORDER BY review_id
                  LIMIT {chunksize}
                  OFFSET {i * chunksize}
                  ;
@@ -233,14 +253,18 @@ def data_prep_in_chunks_sql():
 
         chunk = pd.read_sql(query, con=engine)
 
-        data = EDA_Prep(chunk)
+        data = pipeline(chunk)
         data.run_all()
 
-        data.df.to_sql('features_and_targets', con=engine,
+        data.df.to_sql(out_table, con=engine,
                        index=False, if_exists='append')
         current_chunk_num += 1
+        ft = time.perf_counter()
         print(f'Chunk Number: {current_chunk_num} of {total_chunks} - '
-              f'Loaded to table features_and_targets.')
+              f'Loaded to table {out_table}.')
+        print(f'This chunk took {((ft - st)/60):.2f} minutes.')
+        time_left = ((ft - st) / 60) * (total_chunks - current_chunk_num)
+        print(f'Estimated time remaining: {time_left:.2f} minutes.')
     print('Save to Postgres Complete')
 
 
@@ -279,4 +303,4 @@ def data_prep_in_chunks_pandas():
 
 
 if __name__ == "__main__":
-    data_prep_in_chunks_sql()
+    pass

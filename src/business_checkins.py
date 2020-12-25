@@ -78,7 +78,9 @@ def expand_checkin_data():
             date_comparison_list.append(datetime)
 
     for idx, val in enumerate(date_column_list):
-        df[val] = df.date_list.apply(lambda x: sum(1 if y < date_comparison_list[idx] else 0 for y in x))
+        df[val] = df.date_list.apply(lambda x:
+                                     sum(1 if y < date_comparison_list[idx]
+                                         else 0 for y in x))
         df[f'percent_of_{val}'] = df[val] / df['checkin_count']
 
     df = df.drop('date_list', axis=1)
