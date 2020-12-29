@@ -131,3 +131,211 @@ ON review.business_id = business.business_id
 WHERE business.city = 'Toronto'
 LIMIT 10000
 ;
+
+/*
+Combine and order text non-text features.
+*/
+
+SELECT
+    non_nlp_model_data.*,
+    review_text_only.review_text
+INTO all_model_data
+FROM non_nlp_model_data
+JOIN review_text_only
+ON non_nlp_model_data.review_id = review_text_only.review_id
+;
+
+ALTER TABLE all_model_data
+ADD PRIMARY KEY (review_id)
+;
+
+/*
+Randomly splitting all_model_data into working and holdout datasets.
+*/
+
+SELECT *
+INTO holdout_all_model_data
+FROM all_model_data TABLESAMPLE BERNOULLI (20) REPEATABLE (7)
+;
+
+ALTER TABLE holdout_all_model_data
+ADD PRIMARY KEY (review_id)
+;
+
+SELECT * 
+INTO working_all_model_data
+FROM all_model_data
+EXCEPT 
+SELECT *
+FROM holdout_all_model_data
+;
+
+ALTER TABLE working_all_model_data
+ADD PRIMARY KEY (review_id)
+;
+
+/*
+Split features and targets of working and holdout sets
+into which questions they are trying to answer;
+time-discounted or not.
+*/
+
+SELECT
+    review_id,
+    review_stars,
+    review_stars_minus_user_avg,
+    review_stars_minus_business_avg,
+    review_stars_v_user_avg_sqr_diff,
+    review_stars_v_business_avg_sqr_diff,
+    business_avg_stars,
+    "business_review_count_TD",
+    "business_checkin_count_TD",
+    "business_checkins_per_review_TD",
+    user_avg_stars,
+    user_days_active_at_review_time,
+    "user_total_ufc_TD",
+    "user_review_count_TD",
+    "user_friend_count_TD",
+    "user_fans_TD",
+    "user_compliments_TD",
+    "user_elite_count_TD",
+    "user_years_since_most_recent_elite_TD",
+    "user_ufc_per_review_TD",
+    "user_fans_per_review_TD",
+    "user_ufc_per_years_yelping_TD",
+    "user_fans_per_years_yelping_TD",
+    "user_fan_per_rev_x_ufc_per_rev_TD",
+    "T1_REG_review_total_ufc",
+    "T2_CLS_ufc_>0",
+    "T3_CLS_ufc_level",
+    "T4_REG_ufc_TD",
+    "T5_CLS_ufc_level_TD",
+    "T6_REG_ufc_TDBD",
+    review_text
+INTO holdout_TD_data
+FROM holdout_all_model_data
+;
+
+SELECT
+    review_id,
+    review_stars,
+    review_stars_minus_user_avg,
+    review_stars_minus_business_avg,
+    review_stars_v_user_avg_sqr_diff,
+    review_stars_v_business_avg_sqr_diff,
+    business_avg_stars,
+    "business_review_count_TD",
+    "business_checkin_count_TD",
+    "business_checkins_per_review_TD",
+    user_avg_stars,
+    user_days_active_at_review_time,
+    "user_total_ufc_TD",
+    "user_review_count_TD",
+    "user_friend_count_TD",
+    "user_fans_TD",
+    "user_compliments_TD",
+    "user_elite_count_TD",
+    "user_years_since_most_recent_elite_TD",
+    "user_ufc_per_review_TD",
+    "user_fans_per_review_TD",
+    "user_ufc_per_years_yelping_TD",
+    "user_fans_per_years_yelping_TD",
+    "user_fan_per_rev_x_ufc_per_rev_TD",
+    "T1_REG_review_total_ufc",
+    "T2_CLS_ufc_>0",
+    "T3_CLS_ufc_level",
+    "T4_REG_ufc_TD",
+    "T5_CLS_ufc_level_TD",
+    "T6_REG_ufc_TDBD",
+    review_text
+INTO working_TD_data
+FROM working_all_model_data
+;
+
+ALTER TABLE holdout_TD_data
+ADD PRIMARY KEY (review_id)
+;
+
+ALTER TABLE working_TD_data
+ADD PRIMARY KEY (review_id)
+;
+
+SELECT
+    review_id,
+    review_stars,
+    review_stars_minus_user_avg,
+    review_stars_minus_business_avg,
+    review_stars_v_user_avg_sqr_diff,
+    review_stars_v_business_avg_sqr_diff,
+    business_avg_stars,
+    business_review_count,
+    business_checkin_count,
+    business_checkins_per_review,
+    user_avg_stars,
+    user_total_ufc,
+    user_review_count,
+    user_friend_count,
+    user_fans,
+    user_compliments,
+    user_elite_count,
+    user_years_since_most_recent_elite,
+    user_days_active_at_review_time,
+    user_ufc_per_review,
+    user_fans_per_review,
+    user_ufc_per_years_yelping,
+    user_fans_per_years_yelping,
+    user_fan_per_rev_x_ufc_per_rev,
+    "T1_REG_review_total_ufc",
+    "T2_CLS_ufc_>0",
+    "T3_CLS_ufc_level",
+    "T4_REG_ufc_TD",
+    "T5_CLS_ufc_level_TD",
+    "T6_REG_ufc_TDBD",
+    review_text                           
+INTO holdout_non_TD_data
+FROM holdout_all_model_data
+;
+
+SELECT
+    review_id,
+    review_stars,
+    review_stars_minus_user_avg,
+    review_stars_minus_business_avg,
+    review_stars_v_user_avg_sqr_diff,
+    review_stars_v_business_avg_sqr_diff,
+    business_avg_stars,
+    business_review_count,
+    business_checkin_count,
+    business_checkins_per_review,
+    user_avg_stars,
+    user_total_ufc,
+    user_review_count,
+    user_friend_count,
+    user_fans,
+    user_compliments,
+    user_elite_count,
+    user_years_since_most_recent_elite,
+    user_days_active_at_review_time,
+    user_ufc_per_review,
+    user_fans_per_review,
+    user_ufc_per_years_yelping,
+    user_fans_per_years_yelping,
+    user_fan_per_rev_x_ufc_per_rev,
+    "T1_REG_review_total_ufc",
+    "T2_CLS_ufc_>0",
+    "T3_CLS_ufc_level",
+    "T4_REG_ufc_TD",
+    "T5_CLS_ufc_level_TD",
+    "T6_REG_ufc_TDBD",
+    review_text
+INTO working_non_TD_data
+FROM working_all_model_data
+;
+
+ALTER TABLE holdout_non_TD_data
+ADD PRIMARY KEY (review_id)
+;
+
+ALTER TABLE working_non_TD_data
+ADD PRIMARY KEY (review_id)
+;
