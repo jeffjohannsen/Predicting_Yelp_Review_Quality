@@ -13,6 +13,7 @@ from sklearn.metrics import (classification_report, jaccard_score,
                              hamming_loss, log_loss, balanced_accuracy_score,
                              confusion_matrix, r2_score, mean_absolute_error,
                              mean_squared_error, explained_variance_score)
+from imblearn.over_sampling import SMOTE
 
 from business_checkins import load_dataframe_from_yelp_2
 from model_setup import ModelSetupInfo
@@ -187,7 +188,9 @@ class ModelPipeline():
         else:
             print('Invalid datatype argument')
             exit()
-
+        
+        # -------------->>>>>  NLP patched in
+        
         reg_targets = ['T1_REG_review_total_ufc', 'T4_REG_ufc_TD',
                        'T6_REG_ufc_TDBD']
         cls_targets = ['T2_CLS_ufc_>0', 'T3_CLS_ufc_level',
@@ -228,6 +231,9 @@ class ModelPipeline():
                 train_test_split(features_data, target_data, test_size=0.20,
                                  random_state=7, shuffle=True,
                                  stratify=target_data)
+            smote = SMOTE(random_state=7)
+            self.X_train, self.y_train = smote.fit_resample(self.X_train,
+                                                            self.y_train)
         elif self.goal == 'reg':
             self.X_train, self.X_test, self.y_train, self.y_test = \
                 train_test_split(features_data, target_data, test_size=0.20,
@@ -412,10 +418,19 @@ class ModelPipeline():
 if __name__ == "__main__":
     model_details = ModelDetailsStorage()
 
+    question_options = ['td', 'non_td']
+    data_options = ['text', 'non_text', 'both']
+    target_options = {'T1': 'T1_REG_review_total_ufc', 'T2': 'T2_CLS_ufc_>0',
+                      'T3': 'T3_CLS_ufc_level', 'T4': 'T4_REG_ufc_TD',
+                      'T5': 'T5_CLS_ufc_level_TD', 'T6': 'T6_REG_ufc_TDBD'}
+    model_options = {'Cls': ['Log Reg', 'Forest Cls',
+                             'HGB Cls', 'XGB Cls'],
+                     'Reg': ['Elastic Net', 'Forest Reg',
+                             'HGB Reg', 'XGB Reg']}
     pipeline = ModelPipeline()
-    pipeline.load_data('non_td', 1000)
-    pipeline.prep_data('non_text', 'T2_CLS_ufc_>0', 'power')
-    pipeline.fit_model_CV('HGB Cls')
+    pipeline.load_data('non_td', 10000)
+    pipeline.prep_data('non_text', target_options['T3'], 'power')
+    pipeline.fit_model_CV('Forest Cls')
     pipeline.store_CV_data()
     pipeline.predict_and_store()
 

@@ -130,23 +130,24 @@ class ModelSetupInfo():
              'SGD Reg': SGDRegressor,
              'Naive Bayes': MultinomialNB}
         self.nlp_params = \
-            {'SGD Cls': {'loss': 'hinge',  # various
-                         'penalty': 'l2',  # 'l1', 'elasticnet'
-                         'l1_ratio': 0.15,  # if penalty is elasticnet
-                         'alpha': 0.0001,
-                         'random_state': 7,
-                         'max_iter': 10,
-                         'tol': None,
-                         'class_weight': None},  # 'balanced',
-             'SGD Reg': {'loss': 'hinge',  # various
-                         'penalty': 'l2',  # 'l1', 'elasticnet'
-                         'l1_ratio': 0.15,  # if penalty is elasticnet
-                         'alpha': 0.0001,
-                         'random_state': 7,
-                         'max_iter': 10,
-                         'tol': None,
-                         'class_weight': None},  # 'balanced',
-             'Naive Bayes': {'alpha': 1.0}}
+            {'SGD Cls': {'loss': ['hinge', 'log', 'modified_huber',
+                                  'squared_hinge', 'perceptron'],
+                         'penalty': ['elasticnet'],
+                         'l1_ratio': [0, 0.15, 0.35, 0.5, 0.75],
+                         'alpha': [0.00001, 0.0001, 0.001, 0.1],
+                         'random_state': [7],
+                         'max_iter': [10, 100, 1000],
+                         'class_weight': [None, 'balanced']},
+             'SGD Reg': {'loss': ['squared_loss', 'huber',
+                                  'epsilon_insensitive',
+                                  'squared_epsilon_insensitive'],
+                         'penalty': ['elasticnet'],
+                         'l1_ratio': [0, 0.15, 0.35, 0.5, 0.75],
+                         'alpha': [0.00001, 0.0001, 0.001, 0.1],
+                         'random_state': [7],
+                         'max_iter': [10, 100, 1000],
+                         'class_weight': [None, 'balanced']},
+             'Naive Bayes': {'alpha': [0.1, 0.5, 1, 2]}}
         self.nlp_scoring = \
             {}
 
