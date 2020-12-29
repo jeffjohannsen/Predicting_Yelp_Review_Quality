@@ -1,7 +1,4 @@
 
-# ! WARNING: Work in progress code that still needs docstrings and testing.
-# TODO: Combine this pipeline with the other code for random forest.
-
 import pandas as pd
 import numpy as np
 import psycopg2
