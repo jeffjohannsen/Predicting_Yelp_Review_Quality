@@ -32,7 +32,7 @@ class ModelSetupInfo():
              'Forest Reg': RandomForestRegressor,
              'HGB Reg': HistGradientBoostingRegressor,
              'XGB Reg': XGBRegressor}
-        self.reg_params = \
+        self.reg_params_cv = \
             {'Elastic Net': {'alpha': [0.5, 1, 1.5, 3],
                              'l1_ratio': [0, 0.25, 0.5, 0.75, 1],
                              'tol': [0.0001],
@@ -66,6 +66,39 @@ class ModelSetupInfo():
                          'reg_lambda': [0, 0.25, 0.5, 0.75],
                          'random_state': [7]}
              }
+        self.reg_params = \
+            {'Elastic Net': {'alpha': [1],
+                             'l1_ratio': [0.5],
+                             'tol': [0.0001],
+                             'max_iter': [1000],
+                             'random_state': [7]},
+             'Forest Reg': {'n_estimators': [10],
+                            'criterion': ['mse'],
+                            'max_depth': [100],
+                            'min_samples_split': [2],
+                            'min_samples_leaf': [1],
+                            'max_features': ['sqrt'],
+                            'max_leaf_nodes': [100],
+                            'random_state': [7],
+                            'max_samples': [0.5]},
+             'HGB Reg': {'loss': ['least_squares'],
+                         'learning_rate': [0.4],
+                         'max_iter': [100],
+                         'l2_regularization': [0.25],
+                         'max_depth': [50],
+                         'max_leaf_nodes': [31],
+                         'min_samples_leaf': [20],
+                         },
+             'XGB Reg': {'learning_rate': [0.1],
+                         'n_estimators': [1000],
+                         'max_depth': [10],
+                         'min_child_weight': [3],
+                         'gamma': [0.2],
+                         'subsample': [0.8],
+                         'colsample_bytree': [0.8],
+                         'reg_lambda': [0.5],
+                         'random_state': [7]}
+             }
         self.reg_scoring = \
             {'R2 Score': 'r2',
              'MSE': 'neg_mean_squared_error',
@@ -78,7 +111,7 @@ class ModelSetupInfo():
              'Forest Cls': RandomForestClassifier,
              'HGB Cls': HistGradientBoostingClassifier,
              'XGB Cls': XGBClassifier}
-        self.cls_params = \
+        self.cls_params_cv = \
             {'Log Reg': {'penalty': ['elasticnet'],
                          'tol': [0.0001],
                          'C': [0.5, 1.0, 2],
@@ -114,6 +147,42 @@ class ModelSetupInfo():
                          'reg_lambda': [0, 0.25, 0.5, 0.75],
                          'random_state': [7]}
              }
+        self.cls_params = \
+            {'Log Reg': {'penalty': ['elasticnet'],
+                         'tol': [0.0001],
+                         'C': [0.5, 1.0, 2],
+                         'class_weight': ['balanced'],
+                         'l1_ratio': [0.25],
+                         'random_state': [7],
+                         'solver': ['saga'],
+                         'max_iter': [1000]},
+             'Forest Cls': {'n_estimators': [10],
+                            'criterion': ['gini'],
+                            'max_depth': [100],
+                            'min_samples_split': [2],
+                            'min_samples_leaf': [1],
+                            'max_features': ['sqrt'],
+                            'max_leaf_nodes': [100],
+                            'class_weight': ['balanced'],
+                            'max_samples': [None],
+                            'random_state': [7]},
+             'HGB Cls': {'loss': ['auto'],
+                         'learning_rate': [0.4],
+                         'max_iter': [100],
+                         'max_leaf_nodes': [31],
+                         'min_samples_leaf': [20],
+                         'l2_regularization': [0.25],
+                         'random_state': [7]},
+             'XGB Cls': {'learning_rate': [0.1],
+                         'n_estimators': [100],
+                         'max_depth': [10],
+                         'min_child_weight': [3],
+                         'gamma': [0.2],
+                         'subsample': [0.8],
+                         'colsample_bytree': [0.8],
+                         'reg_lambda': [0.5],
+                         'random_state': [7]}
+             }
         self.cls_scoring = \
             {'Accuracy': 'accuracy',
              'Balanced Accuracy': 'balanced_accuracy',
@@ -126,11 +195,11 @@ class ModelSetupInfo():
         # Naive Bayes and Support Vector Machines are common in NLP.
         # Can also use forests, boosting, and neural nets.
         self.nlp_models = \
-            {'SGD Cls': SGDClassifier,
-             'SGD Reg': SGDRegressor,
-             'Naive Bayes': MultinomialNB}
-        self.nlp_params = \
-            {'SGD Cls': {'loss': ['hinge', 'log', 'modified_huber',
+            {'sgd_cls': SGDClassifier,
+             'sgd_reg': SGDRegressor,
+             'naive_bayes': MultinomialNB}
+        self.nlp_params_cv = \
+            {'sgd_cls': {'loss': ['hinge', 'log', 'modified_huber',
                                   'squared_hinge', 'perceptron'],
                          'penalty': ['elasticnet'],
                          'l1_ratio': [0, 0.15, 0.35, 0.5, 0.75],
@@ -138,18 +207,30 @@ class ModelSetupInfo():
                          'random_state': [7],
                          'max_iter': [10, 100, 1000],
                          'class_weight': [None, 'balanced']},
-             'SGD Reg': {'loss': ['squared_loss', 'huber',
+             'sgd_reg': {'loss': ['squared_loss', 'huber',
                                   'epsilon_insensitive',
                                   'squared_epsilon_insensitive'],
                          'penalty': ['elasticnet'],
                          'l1_ratio': [0, 0.15, 0.35, 0.5, 0.75],
                          'alpha': [0.00001, 0.0001, 0.001, 0.1],
                          'random_state': [7],
-                         'max_iter': [10, 100, 1000],
-                         'class_weight': [None, 'balanced']},
-             'Naive Bayes': {'alpha': [0.1, 0.5, 1, 2]}}
-        self.nlp_scoring = \
-            {}
+                         'max_iter': [10, 100, 1000]},
+             'naive_bayes': {'alpha': [0.1, 0.5, 1, 2]}}
+        self.nlp_params = \
+            {'sgd_cls': {'loss': ['hinge'],
+                         'penalty': ['elasticnet'],
+                         'l1_ratio': [0.15],
+                         'alpha': [0.0001],
+                         'random_state': [7],
+                         'max_iter': [100],
+                         'class_weight': ['balanced']},
+             'sgd_reg': {'loss': ['squared_loss'],
+                         'penalty': ['elasticnet'],
+                         'l1_ratio': [0.15],
+                         'alpha': [0.0001],
+                         'random_state': [7],
+                         'max_iter': [100]},
+             'naive_bayes': {'alpha': [1]}}
 
 
 if __name__ == "__main__":

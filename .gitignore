@@ -1,5 +1,5 @@
 .ipynb_checkpoints
 *.json
 data/full_data/**
-.gitignore
 private_docs
+*.pyc

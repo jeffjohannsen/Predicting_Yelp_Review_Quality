@@ -6,7 +6,6 @@ import pickle
 import os.path
 import numpy as np
 import pandas as pd
-from sklearn.pipeline import Pipeline
 from sklearn.model_selection import (RandomizedSearchCV,
                                      train_test_split)
 from sklearn.metrics import (classification_report, jaccard_score,
@@ -17,6 +16,9 @@ from imblearn.over_sampling import SMOTE
 
 from business_checkins import load_dataframe_from_yelp_2
 from model_setup import ModelSetupInfo
+from nlp import NLPPipeline
+
+pd.set_option('display.max_columns', 100)
 
 
 class ModelDetailsStorage():
@@ -31,10 +33,9 @@ class ModelDetailsStorage():
         self.full_records = \
             pd.read_csv(self.path_to_records_file + 'model_info.csv')
         self.working_records_list = []
-        self.working_record = {}
         self.template_record = \
-            {'record_id': None, 'CV_fit_time': None, 'CV_score_time': None,
-             'refit_time': None, 'CV_accuracy': None,
+            {'record_id': None, 'record_type': None, 'CV_fit_time': None,
+             'CV_score_time': None, 'refit_time': None, 'CV_accuracy': None,
              'CV_balanced_accuracy': None, 'CV_F1_score': None,
              'CV_precision': None, 'CV_recall': None,
              'CV_roc_auc': None,  'CV_R2_score': None,
@@ -51,7 +52,8 @@ class ModelDetailsStorage():
              'Test_explained_variance_score': None, 'data': None,
              'goal': None,  'model_type': None, 'question': None,
              'record_count': None, 'target': None, 'scalar': None,
-             'hyperparameters': None, 'features': None}
+             'balancer': None, 'hyperparameters': None, 'features': None}
+        self.working_record = self.template_record.copy()
 
     def save_to_file(self):
         self.full_records.to_csv(self.path_to_records_file + 'model_info.csv',
@@ -83,7 +85,18 @@ class ModelDetailsStorage():
         pprint.pprint(self.working_record)
 
     def print_list(self):
-        pprint.pprint(self.working_records_list)
+        records = self.working_records_list.copy()
+        records = pd.DataFrame.from_records(records)
+        records_to_print = records[records['record_type'] == 'test']
+        columns_to_print = ['record_count', 'question', 'data', 'goal',
+                            'target', 'model_type', 'Test_accuracy',
+                            'Test_f1_score', 'Test_r2_score', 'Test_rmse']
+        records_to_print = records_to_print.loc[:, columns_to_print]
+        print(records_to_print)
+        # pprint.pprint(self.working_records_list)
+
+    def reset_full_records(self):
+        self.full_records = pd.DataFrame(self.template_record, index=[0])
 
     def print_full_records_info(self):
         print(self.full_records.info())
@@ -95,15 +108,17 @@ class ModelPipeline():
     Full model testing pipeline from loading data to prediction metrics.
     """
     def __init__(self):
+        self.setup = ModelSetupInfo()
         self.data = None
         self.X_train = None
-        self.X_test = None
         self.y_train = None
+        self.X_test = None
         self.y_test = None
-        self.Model = None
-        self.goal = None
         self.y_pred = None
         self.y_pred_proba = None
+        self.Model = None
+        self.goal = None
+        self.datatype = None
 
     def load_data(self, question, records):
         """
@@ -149,7 +164,7 @@ class ModelPipeline():
         model_details.working_record['record_count'] = len(df.index)
         self.data = df
 
-    def prep_data(self, datatype, target, scalar):
+    def prep_data(self, datatype, target):
         """
         Takes in dataframe. Selects appropriate columns.
         Scales, shuffles, stratifies, and splits the data.
@@ -166,15 +181,9 @@ class ModelPipeline():
                                     'T6_REG_ufc_TDBD')
                 Name of target column.
 
-            scalar (str): Options: ('standard', 'power', 'no_scaling')
-                How to scale the data. Reccommend 'power' since
-                a lot of data is heavily skewed.
-
         Returns:
             Tuple of Dataframes and Series: X_train, X_test, y_train, y_test
         """
-        model_setup = ModelSetupInfo()
-        data = None
         if datatype == 'text':
             data = self.data.loc[:, ['review_id', 'review_text',
                                      'T1_REG_review_total_ufc',
@@ -188,9 +197,8 @@ class ModelPipeline():
         else:
             print('Invalid datatype argument')
             exit()
-        
-        # -------------->>>>>  NLP patched in
-        
+        self.datatype = datatype
+
         reg_targets = ['T1_REG_review_total_ufc', 'T4_REG_ufc_TD',
                        'T6_REG_ufc_TDBD']
         cls_targets = ['T2_CLS_ufc_>0', 'T3_CLS_ufc_level',
@@ -203,6 +211,115 @@ class ModelPipeline():
             print('Invalid target argument')
             exit()
 
+        target_data = data[target]
+        non_features = reg_targets + cls_targets
+        features_data = data.drop(labels=non_features, axis=1)
+        model_details.working_record['target'] = target
+        model_details.working_record['goal'] = self.goal
+
+        if self.goal == 'cls':
+            self.X_train, self.X_test, self.y_train, self.y_test = \
+                train_test_split(features_data, target_data, test_size=0.20,
+                                 random_state=7, shuffle=True,
+                                 stratify=target_data)
+        elif self.goal == 'reg':
+            self.X_train, self.X_test, self.y_train, self.y_test = \
+                train_test_split(features_data, target_data, test_size=0.20,
+                                 random_state=7, shuffle=True)
+
+    def add_nlp_features(self, show_model_results=False,
+                         use_cv=False, feature_level=1):
+        """
+        Calls NLPPipeline to add text features to self.X_train self.and X_test.
+
+        Args:
+            show_model_results (bool, optional): Defaults to False.
+                Whether to print metrics of nlp modeling.
+
+            use_cv (bool, optional): Defaults to False.
+                Whether to use cross validation in training nlp models.
+
+            feature_level (int, optional): Options: (1,2,3,4) Defaults to 1.
+                Number of features to add.
+                Increase in levels significantly increases compute time.
+                Level 1: Basic Text Counts
+                Level 2: Model Predictions
+                Level 3: Spacy Language Features
+                Level 4: Text Readability Grade Level
+        """
+        if self.datatype != 'non_text':
+            training_text_features = \
+                self.X_train.loc[:, ['review_id', 'review_text']].copy()
+            testing_text_features = \
+                self.X_test.loc[:, ['review_id', 'review_text']].copy()
+            nlp_pipeline = NLPPipeline(goal=self.goal,
+                                       X_train=training_text_features,
+                                       y_train=self.y_train.copy(),
+                                       X_test=testing_text_features,
+                                       y_test=self.y_test.copy(),
+                                       show_results=show_model_results,
+                                       use_cv=use_cv)
+
+            nlp_pipeline.create_basic_text_features()
+            if feature_level >= 2:
+                nlp_pipeline.create_prediction_features()
+            if feature_level >= 3:
+                nlp_pipeline.create_spacy_features()
+            if feature_level >= 4:
+                nlp_pipeline.create_readability_features()
+
+            nlp_pipeline.X_train.drop('review_text', axis=1, inplace=True)
+            nlp_pipeline.X_test.drop('review_text', axis=1, inplace=True)
+            nlp_pipeline.X_train.rename(columns={"review_id": "nlp_review_id"},
+                                        inplace=True)
+            nlp_pipeline.X_test.rename(columns={"review_id": "nlp_review_id"},
+                                       inplace=True)
+            self.X_train = \
+                pd.concat([self.X_train, nlp_pipeline.X_train], axis=1)
+            self.X_test = \
+                pd.concat([self.X_test, nlp_pipeline.X_test], axis=1)
+
+            mismatched_id_count = \
+                len(self.X_train[self.X_train['review_id']
+                                 != self.X_train['nlp_review_id']])
+            if mismatched_id_count > 0:
+                print(f'Error Combining NLP and Main data. '
+                      'Mismatched ids: {mismatched_id_count}')
+                exit()
+            self.X_train.drop(labels=(['nlp_review_id', 'review_text']),
+                              axis=1, inplace=True)
+            self.X_test.drop(labels=(['nlp_review_id', 'review_text']),
+                             axis=1, inplace=True)
+
+        self.X_train.drop('review_id', axis=1, inplace=True)
+        self.X_test.drop('review_id', axis=1, inplace=True)
+        model_details.working_record['data'] = self.datatype
+        model_details.working_record['features'] = list(self.X_train.columns)
+
+    def fit_model(self, use_cv, model_type, scalar, balancer=None):
+        """
+        Performs cross validation and
+        fits model to best param combo.
+        Updates model_details.working_record column model_type.
+
+        Args:
+            use_cv (bool): Whether to use cross validation.
+
+            model_type (str): Options: (Elastic Net, Forest Reg,
+                                        HGB Reg, XGB Reg, Log Reg,
+                                        Forest Cls, HGB Cls, XGB Cls)
+                Which base model to use.
+
+            scalar (str): Options: ('standard', 'power', 'no_scaling')
+                How to scale the data. Reccommend 'power' since
+                a lot of data is heavily skewed.
+
+            balancer (str, None): Options: ('smote') Defaults to None.
+                How to balance uneven class weights if goal is 'cls'.
+
+        Returns:
+            Object: Fitted model.
+        """
         if scalar == 'standard':
             data_scale = 'Standard'
         elif scalar == 'power':
@@ -212,63 +329,43 @@ class ModelPipeline():
         else:
             print('Invalid scalar argument')
             exit()
-
-        target_data = data[target]
-        non_features = reg_targets + cls_targets
-        non_features.append('review_id')
-        features_data = data.drop(labels=non_features, axis=1)
-        model_details.working_record['data'] = datatype
-        model_details.working_record['target'] = target
-        model_details.working_record['features'] = list(features_data.columns)
-        model_details.working_record['goal'] = self.goal
         model_details.working_record['scalar'] = scalar
         if data_scale is not None:
-            features_data = \
-                model_setup.scalars[data_scale]().fit_transform(features_data)
+            scalar = self.setup.scalars[data_scale]()
+            self.X_train = scalar.fit_transform(self.X_train)
+            self.X_test = scalar.transform(self.X_test)
 
-        if self.goal == 'cls':
-            self.X_train, self.X_test, self.y_train, self.y_test = \
-                train_test_split(features_data, target_data, test_size=0.20,
-                                 random_state=7, shuffle=True,
-                                 stratify=target_data)
+        if balancer not in [None, 'smote']:
+            print('Invalid balancer argument')
+            exit()
+        model_details.working_record['balancer'] = balancer
+        if (self.goal == 'cls') and (balancer == 'smote'):
             smote = SMOTE(random_state=7)
             self.X_train, self.y_train = smote.fit_resample(self.X_train,
                                                             self.y_train)
-        elif self.goal == 'reg':
-            self.X_train, self.X_test, self.y_train, self.y_test = \
-                train_test_split(features_data, target_data, test_size=0.20,
-                                 random_state=7, shuffle=True)
 
-    def fit_model_CV(self, model_type):
-        """
-        Performs cross validation and
-        fits model to best param combo.
-        Updates model_details.working_record column model_type.
-
-        Args:
-            model_type (str): Options: (Elastic Net, Forest Reg,
-                                        HGB Reg, XGB Reg, Log Reg,
-                                        Forest Cls, HGB Cls, XGB Cls)
-                Which base model to use.
-
-        Returns:
-            Object: Fitted model.
-        """
-        model_setup = ModelSetupInfo()
-        if (model_type in model_setup.cls_models) and (self.goal == 'cls'):
-            ModelCV = RandomizedSearchCV(model_setup.cls_models[model_type](),
-                                         model_setup.cls_params[model_type],
+        if (model_type in self.setup.cls_models) and (self.goal == 'cls'):
+            if use_cv:
+                param_grid = self.setup.cls_params_cv[model_type]
+            else:
+                param_grid = self.setup.cls_params[model_type]
+            ModelCV = RandomizedSearchCV(self.setup.cls_models[model_type](),
+                                         param_grid,
                                          n_iter=10,
-                                         scoring=model_setup.cls_scoring,
+                                         scoring=self.setup.cls_scoring,
                                          n_jobs=None,
                                          cv=None,
                                          refit='Accuracy',
                                          random_state=7)
-        elif (model_type in model_setup.reg_models) and (self.goal == 'reg'):
-            ModelCV = RandomizedSearchCV(model_setup.reg_models[model_type](),
-                                         model_setup.reg_params[model_type],
+        elif (model_type in self.setup.reg_models) and (self.goal == 'reg'):
+            if use_cv:
+                param_grid = self.setup.cls_params_cv[model_type]
+            else:
+                param_grid = self.setup.cls_params[model_type]
+            ModelCV = RandomizedSearchCV(self.setup.reg_models[model_type](),
+                                         param_grid,
                                          n_iter=10,
-                                         scoring=model_setup.reg_scoring,
+                                         scoring=self.setup.reg_scoring,
                                          n_jobs=None,
                                          cv=None,
                                          refit='R2 Score',
@@ -279,8 +376,9 @@ class ModelPipeline():
                      (classification or regression)''')
             exit()
         ModelCV.fit(self.X_train, self.y_train)
-        model_details.working_record['model_type'] = model_type
         self.Model = ModelCV
+        model_details.working_record['balancer'] = balancer
+        model_details.working_record['model_type'] = model_type
 
     def store_CV_metrics(self, record, cv_results, cv_results_index):
         """
@@ -338,9 +436,11 @@ class ModelPipeline():
             if i != self.Model.best_index_:
                 self.store_CV_metrics(model_details.working_record,
                                       cv_results, i)
+                model_details.working_record['record_type'] = 'cv'
                 model_details.add_record_to_list()
         self.store_CV_metrics(model_details.working_record, cv_results,
                               self.Model.best_index_)
+        model_details.working_record['record_type'] = 'test'
         model_details.working_record['refit_time'] = \
             round(self.Model.refit_time_, 5)
 
@@ -415,26 +515,77 @@ class ModelPipeline():
         self.Model = pickle.load(open(completeName, 'wb'))
 
 
-if __name__ == "__main__":
-    model_details = ModelDetailsStorage()
+def validate_input(argument, input_value, options):
+    if input_value not in options:
+        print(f'Invalid {argument} argument.')
+        print(f'Available options include: {options}')
+        exit()
 
-    question_options = ['td', 'non_td']
-    data_options = ['text', 'non_text', 'both']
-    target_options = {'T1': 'T1_REG_review_total_ufc', 'T2': 'T2_CLS_ufc_>0',
-                      'T3': 'T3_CLS_ufc_level', 'T4': 'T4_REG_ufc_TD',
-                      'T5': 'T5_CLS_ufc_level_TD', 'T6': 'T6_REG_ufc_TDBD'}
-    model_options = {'Cls': ['Log Reg', 'Forest Cls',
-                             'HGB Cls', 'XGB Cls'],
-                     'Reg': ['Elastic Net', 'Forest Reg',
-                             'HGB Reg', 'XGB Reg']}
+
+def run_full_pipeline(use_cv, print_results, save_results, question,
+                      records, data, target, model,
+                      scalar='power', balancer='smote'):
+    """
+    Wrapper function for the full model pipeline.
+    Arguments will be partially validated.
+    See model_setup.py for full options list.
+
+    Args:
+        records (int): Record count to load.
+            Larger numbers may overload memory
+            and/or dramtically increase computation time.
+            Max records avaliable: 6241598.
+
+        use_cv (bool): Whether to use cross validation.
+            Increases computation time.
+
+        print_results (bool): Whether to print the modeling results.
+        save_results (bool): Whether to save the modeling results.
+        question (str):
+        data (str):
+        target (str):
+        model (str):
+        scalar (str, optional): Defaults to 'power'.
+        balancer (str, optional): Defaults to 'smote'.
+    """
     pipeline = ModelPipeline()
-    pipeline.load_data('non_td', 10000)
-    pipeline.prep_data('non_text', target_options['T3'], 'power')
-    pipeline.fit_model_CV('Forest Cls')
+
+    param_options = {'question': ['td', 'non_td'],
+                     'data': ['text', 'non_text', 'both'],
+                     'target': ['T1_REG_review_total_ufc',
+                                'T2_CLS_ufc_>0', 'T3_CLS_ufc_level',
+                                'T4_REG_ufc_TD', 'T5_CLS_ufc_level_TD',
+                                'T6_REG_ufc_TDBD'],
+                     'model': ['Log Reg', 'Forest Cls',
+                               'HGB Cls', 'XGB Cls',
+                               'Elastic Net', 'Forest Reg',
+                               'HGB Reg', 'XGB Reg'],
+                     'scalar': ['power', 'standard', 'no_scaling'],
+                     'balancer': ['smote', None]}
+
+    for k, v in {'question': question, 'data': data, 'target': target,
+                 'model': model, 'scalar': scalar,
+                 'balancer': balancer}.items():
+        validate_input(k, v, param_options[k])
+
+    pipeline.load_data(question, records)
+    pipeline.prep_data(data, target)
+    pipeline.add_nlp_features(show_model_results=False, use_cv=use_cv,
+                              feature_level=3)
+    pipeline.fit_model(use_cv, model, scalar, balancer)
     pipeline.store_CV_data()
     pipeline.predict_and_store()
 
-    model_details.print_record()
-    # model_details.add_working_list_to_full_records()
-    # model_details.print_full_records_info()
-    # model_details.save_to_file()
+    model_details.add_working_list_to_full_records()
+    if print_results:
+        model_details.print_list()
+    if save_results:
+        model_details.save_to_file()
+
+
+if __name__ == "__main__":
+    model_details = ModelDetailsStorage()
+    run_full_pipeline(use_cv=True, print_results=True, save_results=False,
+                      question='non_td', records=1000, data='both',
+                      target='T2_CLS_ufc_>0', model='Log Reg',
+                      scalar='power', balancer='smote')
