@@ -21,11 +21,11 @@ class EDA_Prep():
     def usefulness_level(self, x):
         if x == 0:
             return 'zero'
-        elif x < 10:
+        elif x < 3:
             return 'low'
-        elif x < 100:
+        elif x < 10:
             return 'medium'
-        elif x >= 100:
+        elif x >= 10:
             return 'high'
         else:
             return 'unknown'
