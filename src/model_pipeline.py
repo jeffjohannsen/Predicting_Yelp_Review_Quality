@@ -31,7 +31,7 @@ class ModelDetailsStorage():
         self.aws = run_on_aws
         if self.aws:
             self.path_to_records_file = \
-                '~Predicting-Yelp-Review-Quality/models/'
+                '~/Predicting-Yelp-Review-Quality/models/'
         else:
             self.path_to_records_file = \
                 '~/Documents/Galvanize_DSI/' \
