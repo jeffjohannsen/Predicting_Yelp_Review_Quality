@@ -27,10 +27,15 @@ class ModelDetailsStorage():
     Storage class for keeping track of the inputs and results of
     the modeling process.
     """
-    def __init__(self):
-        self.path_to_records_file = \
-            '~/Documents/Galvanize_DSI/' \
-            'capstones/C2_Yelp_Review_Quality/models/'
+    def __init__(self, run_on_aws):
+        self.aws = run_on_aws
+        if self.aws:
+            self.path_to_records_file = \
+                '~Predicting-Yelp-Review-Quality/models/'
+        else:
+            self.path_to_records_file = \
+                '~/Documents/Galvanize_DSI/' \
+                'capstones/C2_Yelp_Review_Quality/models/'
         self.full_records = \
             pd.read_csv(self.path_to_records_file + 'model_info.csv')
         self.working_records_list = []
@@ -109,9 +114,14 @@ class ModelPipeline():
     """
     Full model testing pipeline from loading data to prediction metrics.
     """
-    def __init__(self):
+    def __init__(self, run_on_aws):
+        """
+        Args:
+            run_on_aws (bool): True if running on aws, else False.
+        """
+        self.aws = run_on_aws
         self.setup = ModelSetupInfo()
-        self.model_details = ModelDetailsStorage()
+        self.model_details = ModelDetailsStorage(self.aws)
         self.data = None
         self.X_train = None
         self.y_train = None
