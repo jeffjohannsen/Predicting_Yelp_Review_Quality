@@ -627,7 +627,7 @@ if __name__ == "__main__":
     for data in ['text', 'non_text', 'both']:
         for target in ['T2_CLS_ufc_>0', 'T5_CLS_ufc_level_TD']:
             for model in ['Log Reg', 'Forest Cls', 'HGB Cls', 'XGB Cls']:
-                pipeline = ModelPipeline()
+                pipeline = ModelPipeline(run_on_aws=True)
                 pipeline.run_full_pipeline(use_cv=True, print_results=True,
                                            save_results=True, question='td',
                                            records=10000, data=data,
