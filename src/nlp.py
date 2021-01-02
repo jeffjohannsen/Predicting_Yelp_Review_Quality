@@ -183,8 +183,8 @@ class NLPPipeline():
                         # print(pd.DataFrame(cv_pipeline.cv_results_))
                         print('\nBest Hyperparameters:')
                         pprint.pprint(cv_pipeline.best_estimator_)
-                        print(f'''\nBest CV Accuracy:
-                               {cv_pipeline.best_score_:.2f}\n''')
+                        print(f'\nBest CV Accuracy: '
+                              f'{cv_pipeline.best_score_:.2f}\n')
                     self.y_pred = \
                         cv_pipeline.predict(self.X_test['review_text'])
                     print('\nModel Prediction Results on Test Data')
@@ -241,8 +241,8 @@ class NLPPipeline():
                         # print(pd.DataFrame(cv_pipeline.cv_results_))
                         print('Best Hyperparameters:')
                         pprint.pprint(cv_pipeline.best_estimator_)
-                        print(f'''\nBest CV R2 Score:
-                               {cv_pipeline.best_score_:.2f}\n''')
+                        print(f'\nBest CV R2 Score: '
+                              f'{cv_pipeline.best_score_:.2f}\n')
                     self.y_pred = \
                         cv_pipeline.predict(self.X_test['review_text'])
                     baseline_mean = np.mean(self.y_test)
@@ -256,12 +256,12 @@ class NLPPipeline():
                         mean_squared_error(self.y_test, baseline_mean_array,
                                            squared=False)
                     print('\nModel Prediction Results on Test Data')
-                    print(f'''Model R2: {model_r2:.2f}, Baseline R2:
-                           {baseline_r2:.2f}, Difference:
-                          {(model_r2 - baseline_r2):.2f}''')
-                    print(f'''Model RMSE: {model_rmse:.2f}, Baseline RMSE:
-                           {baseline_rmse:.2f}, Difference:
-                           {(baseline_rmse - model_rmse):.2f}\n''')
+                    print(f'Model R2: {model_r2:.2f}, Baseline R2: '
+                          f'{baseline_r2:.2f}, Difference: '
+                          f'{(model_r2 - baseline_r2):.2f}')
+                    print(f'Model RMSE: {model_rmse:.2f}, Baseline RMSE: '
+                          f'{baseline_rmse:.2f}, Difference: '
+                          f'{(baseline_rmse - model_rmse):.2f}\n')
                 for df in [self.X_train, self.X_test]:
                     df[f'review_{nlp_model}_pred'] = \
                         cv_pipeline.predict(df['review_text'])

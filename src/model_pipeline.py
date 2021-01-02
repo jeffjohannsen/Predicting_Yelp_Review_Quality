@@ -3,6 +3,7 @@ import random
 import string
 import pprint
 import pickle
+import time
 import os.path
 import numpy as np
 import pandas as pd
@@ -52,7 +53,8 @@ class ModelDetailsStorage():
              'Test_explained_variance_score': None, 'data': None,
              'goal': None,  'model_type': None, 'question': None,
              'record_count': None, 'target': None, 'scalar': None,
-             'balancer': None, 'hyperparameters': None, 'features': None}
+             'balancer': None, 'hyperparameters': None, 'features': None,
+             'full_runtime_minutes': None}
         self.working_record = self.template_record.copy()
 
     def save_to_file(self):
@@ -79,7 +81,7 @@ class ModelDetailsStorage():
         self.working_record = {}
 
     def reset_record(self):
-        self.working_record = self.template_record
+        self.working_record = self.template_record.copy()
 
     def print_record(self):
         pprint.pprint(self.working_record)
@@ -109,6 +111,7 @@ class ModelPipeline():
     """
     def __init__(self):
         self.setup = ModelSetupInfo()
+        self.model_details = ModelDetailsStorage()
         self.data = None
         self.X_train = None
         self.y_train = None
@@ -160,8 +163,8 @@ class ModelPipeline():
         if nan_count > 0:
             df = df.dropna()
             print('This data has nans. They are being dropped.')
-        model_details.working_record['question'] = question
-        model_details.working_record['record_count'] = len(df.index)
+        self.model_details.working_record['question'] = question
+        self.model_details.working_record['record_count'] = len(df.index)
         self.data = df
 
     def prep_data(self, datatype, target):
@@ -214,8 +217,8 @@ class ModelPipeline():
         target_data = data[target]
         non_features = reg_targets + cls_targets
         features_data = data.drop(labels=non_features, axis=1)
-        model_details.working_record['target'] = target
-        model_details.working_record['goal'] = self.goal
+        self.model_details.working_record['target'] = target
+        self.model_details.working_record['goal'] = self.goal
 
         if self.goal == 'cls':
             self.X_train, self.X_test, self.y_train, self.y_test = \
@@ -293,8 +296,9 @@ class ModelPipeline():
 
         self.X_train.drop('review_id', axis=1, inplace=True)
         self.X_test.drop('review_id', axis=1, inplace=True)
-        model_details.working_record['data'] = self.datatype
-        model_details.working_record['features'] = list(self.X_train.columns)
+        self.model_details.working_record['data'] = self.datatype
+        self.model_details.working_record['features'] = \
+            list(self.X_train.columns)
 
     def fit_model(self, use_cv, model_type, scalar, balancer=None):
         """
@@ -329,7 +333,7 @@ class ModelPipeline():
         else:
             print('Invalid scalar argument')
             exit()
-        model_details.working_record['scalar'] = scalar
+        self.model_details.working_record['scalar'] = scalar
         if data_scale is not None:
             scalar = self.setup.scalars[data_scale]()
             self.X_train = scalar.fit_transform(self.X_train)
@@ -338,7 +342,7 @@ class ModelPipeline():
         if balancer not in [None, 'smote']:
             print('Invalid balancer argument')
             exit()
-        model_details.working_record['balancer'] = balancer
+        self.model_details.working_record['balancer'] = balancer
         if (self.goal == 'cls') and (balancer == 'smote'):
             smote = SMOTE(random_state=7)
             self.X_train, self.y_train = smote.fit_resample(self.X_train,
@@ -371,14 +375,14 @@ class ModelPipeline():
                                          refit='R2 Score',
                                          random_state=7)
         else:
-            print('''Invalid model type. Make sure the model is in model_setup
-                     and has the correct goal.
-                     (classification or regression)''')
+            print('Invalid model type. Make sure the model is in model_setup '
+                  'and has the correct goal. '
+                  '(classification or regression)')
             exit()
         ModelCV.fit(self.X_train, self.y_train)
         self.Model = ModelCV
-        model_details.working_record['balancer'] = balancer
-        model_details.working_record['model_type'] = model_type
+        self.model_details.working_record['balancer'] = balancer
+        self.model_details.working_record['model_type'] = model_type
 
     def store_CV_metrics(self, record, cv_results, cv_results_index):
         """
@@ -434,14 +438,14 @@ class ModelPipeline():
         cv_results = pd.DataFrame(self.Model.cv_results_)
         for i in list(range(len(cv_results.index))):
             if i != self.Model.best_index_:
-                self.store_CV_metrics(model_details.working_record,
+                self.store_CV_metrics(self.model_details.working_record,
                                       cv_results, i)
-                model_details.working_record['record_type'] = 'cv'
-                model_details.add_record_to_list()
-        self.store_CV_metrics(model_details.working_record, cv_results,
+                self.model_details.working_record['record_type'] = 'cv'
+                self.model_details.add_record_to_list()
+        self.store_CV_metrics(self.model_details.working_record, cv_results,
                               self.Model.best_index_)
-        model_details.working_record['record_type'] = 'test'
-        model_details.working_record['refit_time'] = \
+        self.model_details.working_record['record_type'] = 'test'
+        self.model_details.working_record['refit_time'] = \
             round(self.Model.refit_time_, 5)
 
     def predict_and_store(self):
@@ -466,23 +470,24 @@ class ModelPipeline():
             recall = round(report['weighted avg']['recall'], 5)
             f1_score = round(report['weighted avg']['f1-score'], 5)
             confusion_mtx = confusion_matrix(self.y_test, self.y_pred)
-            if model_details.working_record['target'] == 'T2_CLS_ufc_>0':
+            if self.model_details.working_record['target'] == 'T2_CLS_ufc_>0':
                 tn, fp, fn, tp = confusion_mtx.ravel()
-                model_details.working_record['Test_true_negatives'] = tn
-                model_details.working_record['Test_false_positives'] = fp
-                model_details.working_record['Test_false_negatives'] = fn
-                model_details.working_record['Test_true_positives'] = tp
-            model_details.working_record['Test_classification_report'] = report
-            model_details.working_record['Test_balanced_accuracy'] = \
+                self.model_details.working_record['Test_true_negatives'] = tn
+                self.model_details.working_record['Test_false_positives'] = fp
+                self.model_details.working_record['Test_false_negatives'] = fn
+                self.model_details.working_record['Test_true_positives'] = tp
+            self.model_details.working_record['Test_classification_report'] = \
+                report
+            self.model_details.working_record['Test_balanced_accuracy'] = \
                 balanced_accuracy
-            model_details.working_record['Test_jaccard_score'] = jaccard
-            model_details.working_record['Test_hamming_loss'] = hamming
-            model_details.working_record['Test_log_loss'] = log
-            model_details.working_record['Test_accuracy'] = accuracy
-            model_details.working_record['Test_precision'] = precision
-            model_details.working_record['Test_recall'] = recall
-            model_details.working_record['Test_f1_score'] = f1_score
-            model_details.working_record['Test_confusion_matrix'] = \
+            self.model_details.working_record['Test_jaccard_score'] = jaccard
+            self.model_details.working_record['Test_hamming_loss'] = hamming
+            self.model_details.working_record['Test_log_loss'] = log
+            self.model_details.working_record['Test_accuracy'] = accuracy
+            self.model_details.working_record['Test_precision'] = precision
+            self.model_details.working_record['Test_recall'] = recall
+            self.model_details.working_record['Test_f1_score'] = f1_score
+            self.model_details.working_record['Test_confusion_matrix'] = \
                 confusion_mtx
         elif self.goal == 'reg':
             R2_score = round(r2_score(self.y_test, self.y_pred), 5)
@@ -492,13 +497,12 @@ class ModelPipeline():
             mae = round(mean_absolute_error(self.y_test, self.y_pred), 5)
             explained_variance = \
                 round(explained_variance_score(self.y_test, self.y_pred), 5)
-            model_details.working_record['Test_r2_score'] = R2_score
-            model_details.working_record['Test_mse'] = mse
-            model_details.working_record['Test_rmse'] = rmse
-            model_details.working_record['Test_mae'] = mae
-            model_details.working_record['Test_explained_variance_score'] = \
-                explained_variance
-        model_details.add_record_to_list()
+            self.model_details.working_record['Test_r2_score'] = R2_score
+            self.model_details.working_record['Test_mse'] = mse
+            self.model_details.working_record['Test_rmse'] = rmse
+            self.model_details.working_record['Test_mae'] = mae
+            self.model_details.working_record['Test_explained_variance_score']\
+                = explained_variance
 
     def save_model_to_pickle(self):
         save_path = '~/Documents/Galvanize_DSI/' \
@@ -514,6 +518,89 @@ class ModelPipeline():
         completeName = os.path.join(save_path, name_of_file+".pkl")
         self.Model = pickle.load(open(completeName, 'wb'))
 
+    def run_full_pipeline(self, use_cv, print_results, save_results, question,
+                          records, data, target, model,
+                          scalar='power', balancer='smote'):
+        """
+        Wrapper function for the full model pipeline.
+        Arguments will be partially validated.
+        See model_setup.py for full options list.
+
+        Args:
+            records (int): Record count to load.
+                Larger numbers may overload memory
+                and/or dramtically increase computation time.
+                Max records avaliable: 6241598.
+
+            use_cv (bool): Whether to use cross validation.
+                Increases computation time.
+
+            print_results (bool): Whether to print the modeling results.
+            save_results (bool): Whether to save the modeling results.
+            question (str):
+            data (str):
+            target (str):
+            model (str):
+            scalar (str, optional): Defaults to 'power'.
+            balancer (str, optional): Defaults to 'smote'.
+        """
+        sta = time.perf_counter()
+        param_options = {'question': ['td', 'non_td'],
+                         'data': ['text', 'non_text', 'both'],
+                         'target': ['T1_REG_review_total_ufc',
+                                    'T2_CLS_ufc_>0', 'T3_CLS_ufc_level',
+                                    'T4_REG_ufc_TD', 'T5_CLS_ufc_level_TD',
+                                    'T6_REG_ufc_TDBD'],
+                         'model': ['Log Reg', 'Forest Cls',
+                                   'HGB Cls', 'XGB Cls',
+                                   'Elastic Net', 'Forest Reg',
+                                   'HGB Reg', 'XGB Reg'],
+                         'scalar': ['power', 'standard', 'no_scaling'],
+                         'balancer': ['smote', None]}
+
+        for k, v in {'question': question, 'data': data, 'target': target,
+                     'model': model, 'scalar': scalar,
+                     'balancer': balancer}.items():
+            validate_input(k, v, param_options[k])
+
+        st = time.perf_counter()
+        self.load_data(question, records)
+        ft = time.perf_counter()
+        print(f'Loaded Data in {(ft - st):.4f} seconds')
+        st = time.perf_counter()
+        self.prep_data(data, target)
+        ft = time.perf_counter()
+        print(f'Prepped Data in {(ft - st):.4f} seconds')
+        st = time.perf_counter()
+        self.add_nlp_features(show_model_results=print_results, use_cv=use_cv,
+                              feature_level=3)
+        ft = time.perf_counter()
+        print(f'Added NLP Features in {((ft - st) / 60):.4f} minutes')
+        st = time.perf_counter()
+        self.fit_model(use_cv, model, scalar, balancer)
+        ft = time.perf_counter()
+        print(f'Fitted Main Model and CV in {((ft - st) / 60):.4f} minutes')
+        st = time.perf_counter()
+        self.store_CV_data()
+        ft = time.perf_counter()
+        print(f'Stored CV data in {(ft - st):.4f} seconds')
+        st = time.perf_counter()
+        self.predict_and_store()
+        ft = time.perf_counter()
+        print(f'Predicted and Evaluated in {((ft - st) / 60):.4f} minutes')
+        fta = time.perf_counter()
+        print(f'Full Pipeline Run in {((fta - sta) / 60):.4f} minutes')
+        self.model_details.working_record['full_runtime_minutes'] = \
+            (fta - sta) / 60
+        self.model_details.add_record_to_list()
+        if print_results:
+            self.model_details.print_list()
+        self.model_details.add_working_list_to_full_records()
+        if save_results:
+            self.model_details.save_to_file()
+        self.model_details.reset_record()
+        self.model_details.clear_working_records_list()
+
 
 def validate_input(argument, input_value, options):
     if input_value not in options:
@@ -522,70 +609,17 @@ def validate_input(argument, input_value, options):
         exit()
 
 
-def run_full_pipeline(use_cv, print_results, save_results, question,
-                      records, data, target, model,
-                      scalar='power', balancer='smote'):
-    """
-    Wrapper function for the full model pipeline.
-    Arguments will be partially validated.
-    See model_setup.py for full options list.
-
-    Args:
-        records (int): Record count to load.
-            Larger numbers may overload memory
-            and/or dramtically increase computation time.
-            Max records avaliable: 6241598.
-
-        use_cv (bool): Whether to use cross validation.
-            Increases computation time.
-
-        print_results (bool): Whether to print the modeling results.
-        save_results (bool): Whether to save the modeling results.
-        question (str):
-        data (str):
-        target (str):
-        model (str):
-        scalar (str, optional): Defaults to 'power'.
-        balancer (str, optional): Defaults to 'smote'.
-    """
-    pipeline = ModelPipeline()
-
-    param_options = {'question': ['td', 'non_td'],
-                     'data': ['text', 'non_text', 'both'],
-                     'target': ['T1_REG_review_total_ufc',
-                                'T2_CLS_ufc_>0', 'T3_CLS_ufc_level',
-                                'T4_REG_ufc_TD', 'T5_CLS_ufc_level_TD',
-                                'T6_REG_ufc_TDBD'],
-                     'model': ['Log Reg', 'Forest Cls',
-                               'HGB Cls', 'XGB Cls',
-                               'Elastic Net', 'Forest Reg',
-                               'HGB Reg', 'XGB Reg'],
-                     'scalar': ['power', 'standard', 'no_scaling'],
-                     'balancer': ['smote', None]}
-
-    for k, v in {'question': question, 'data': data, 'target': target,
-                 'model': model, 'scalar': scalar,
-                 'balancer': balancer}.items():
-        validate_input(k, v, param_options[k])
-
-    pipeline.load_data(question, records)
-    pipeline.prep_data(data, target)
-    pipeline.add_nlp_features(show_model_results=False, use_cv=use_cv,
-                              feature_level=3)
-    pipeline.fit_model(use_cv, model, scalar, balancer)
-    pipeline.store_CV_data()
-    pipeline.predict_and_store()
-
-    model_details.add_working_list_to_full_records()
-    if print_results:
-        model_details.print_list()
-    if save_results:
-        model_details.save_to_file()
-
-
 if __name__ == "__main__":
-    model_details = ModelDetailsStorage()
-    run_full_pipeline(use_cv=True, print_results=True, save_results=False,
-                      question='non_td', records=1000, data='both',
-                      target='T2_CLS_ufc_>0', model='Log Reg',
-                      scalar='power', balancer='smote')
+    # run_full_pipeline(use_cv=True, print_results=True, save_results=False,
+    #                   question='non_td', records=1000, data='both',
+    #                   target='T2_CLS_ufc_>0', model='Log Reg',
+    #                   scalar='power', balancer='smote')
+    for data in ['text', 'non_text', 'both']:
+        for target in ['T2_CLS_ufc_>0', 'T5_CLS_ufc_level_TD']:
+            for model in ['Log Reg', 'Forest Cls', 'HGB Cls', 'XGB Cls']:
+                pipeline = ModelPipeline()
+                pipeline.run_full_pipeline(use_cv=True, print_results=True,
+                                           save_results=True, question='td',
+                                           records=10000, data=data,
+                                           target=target, model=model,
+                                           scalar='power', balancer='smote')
