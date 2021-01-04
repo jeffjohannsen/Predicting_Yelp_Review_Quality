@@ -9,7 +9,14 @@
     * [The Data](#The-Data)
 * [Data Storage](#Data-Storage)
 * [Data Pipeline](#Data-Pipeline)
+    * [Data Cleaning](#Data-Cleaning)
+    * [Time Discounting](#Time-Discounting)
+    * [Target Creation](#Target-Creation)
+    * [Metadata Feature Engineering](#Metadata-Feature-Engineering)
+    * [NLP Feature Engineering](#NLP-Feature-Engineering)
 * [Data Modeling](#Data-Modeling)
+    * [Model Setup](#Model-Setup)
+    * [Model Results](Model-Results)
 * [Conclusions](#Conclusions)
 * [Next Steps](#Next-Steps)
 * [Photo and Data Credits](#Photo-and-Data-Credits)
@@ -31,10 +38,10 @@ Working with and better understanding the data available to these companies will
 
 ## Goal and Central Questions
 
-The goal of this project is to explore a way to increase user retention, satisfaction, and engagement for Yelp and any other company that incorporates reviews within its platform. These improvements will be accomplished by surfacing the highest quality reviews via information gained from the data surrounding those reviews.
+The goal of this project is to explore a way to increase user retention, satisfaction, and engagement for Yelp and any other company that incorporates reviews within its platform. These improvements will be accomplished by predicting the highest quality reviews via information gained from the review text and data surrounding the reviews.
 
 ### Central Questions
-### 1. Can the quality of a review be determined by data surrounding the review?
+### 1. Can the quality of a review be determined by the review text or the data surrounding the review?
 ### 2. What types of data are most useful for predicting review quality?
 
 ## The Data
@@ -101,7 +108,15 @@ The main data cleaning steps included:
 * Converting Data-types
 * Organizing Features
 
-## Feature Engineering
+## Time Discounting
+
+When trying to use the data to answer the questions I want to answer, the passage of time creates an issue that must be addressed. 
+
+## Target Creation
+
+The first goal is to predict the quality of a review but what exactly should we be trying to predict?
+
+## Metadata Feature Engineering
 
 Features added include:
 * Sums
@@ -118,29 +133,33 @@ Features added include:
     * Review Stars vs. User Average
     * Review Stars vs. Restaurant Average
 
+## NLP Feature Engineering
+
 <br/><br/>
 
 # Data Modeling
 
-## Model Choice: Random Forest Classifier
+## Model Setup
+
+### Model Choice: Random Forest Classifier
 
 Why?
 1. Easy to setup and work with.
 2. Allowed me to be reasonably confident with the validity of my process and results.
 3. Provided quick feedback on whether the questions were worth pursuing or not.
 
-## Binary Classification 
+### Binary Classification 
 
 Two Options:   
 1. The review in question **IS** a quality review. Coded as 1.
 2. The review in question **IS NOT** a quality review. Coded as 0.
 
-## Class Balance
+### Class Balance
 * The classes are very close to equal.
 * 49% of reviews are quality.
 * 51% of reviews are not quality. 
 
-## Model Performance Metrics and Decision Threshold
+### Model Performance Metrics and Decision Threshold
 
 Now - Accuracy
 * Most common and well understood metric. Best for an initial proof of concept. 
@@ -156,10 +175,11 @@ Later - Precision and Accuracy
     * The quality of a review is not necessarily relative.
     * The standard for choosing a review is relative.
 
+## Model Results
+
 ## Central Question 1:
 ## Can the quality of a review be determined by data surrounding the review?
 
-## Model Results
 Tested a lot of different hyperparameters but couldn't get the test accuracy to move very much beyond what was provided by the default values.  
 My changes only really moved the training accuracy.  
 The best performing model was created using: 100000 records, 100 trees, unrestricted depth and leaf nodes.   

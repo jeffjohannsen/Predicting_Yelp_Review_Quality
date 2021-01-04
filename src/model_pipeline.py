@@ -7,7 +7,7 @@ import time
 import os.path
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import (RandomizedSearchCV,
+from sklearn.model_selection import (GridSearchCV,
                                      train_test_split)
 from sklearn.metrics import (classification_report, jaccard_score,
                              hamming_loss, log_loss, balanced_accuracy_score,
@@ -363,27 +363,23 @@ class ModelPipeline():
                 param_grid = self.setup.cls_params_cv[model_type]
             else:
                 param_grid = self.setup.cls_params[model_type]
-            ModelCV = RandomizedSearchCV(self.setup.cls_models[model_type](),
-                                         param_grid,
-                                         n_iter=10,
-                                         scoring=self.setup.cls_scoring,
-                                         n_jobs=None,
-                                         cv=None,
-                                         refit='Accuracy',
-                                         random_state=7)
+            ModelCV = GridSearchCV(self.setup.cls_models[model_type](),
+                                   param_grid,
+                                   scoring=self.setup.cls_scoring,
+                                   n_jobs=-1,
+                                   cv=None,
+                                   refit='Accuracy')
         elif (model_type in self.setup.reg_models) and (self.goal == 'reg'):
             if use_cv:
                 param_grid = self.setup.cls_params_cv[model_type]
             else:
                 param_grid = self.setup.cls_params[model_type]
-            ModelCV = RandomizedSearchCV(self.setup.reg_models[model_type](),
-                                         param_grid,
-                                         n_iter=10,
-                                         scoring=self.setup.reg_scoring,
-                                         n_jobs=None,
-                                         cv=None,
-                                         refit='R2 Score',
-                                         random_state=7)
+            ModelCV = GridSearchCV(self.setup.reg_models[model_type](),
+                                   param_grid,
+                                   scoring=self.setup.reg_scoring,
+                                   n_jobs=-1,
+                                   cv=None,
+                                   refit='R2 Score')
         else:
             print('Invalid model type. Make sure the model is in model_setup '
                   'and has the correct goal. '
@@ -610,6 +606,11 @@ class ModelPipeline():
             self.model_details.save_to_file()
         self.model_details.reset_record()
         self.model_details.clear_working_records_list()
+        return (self.X_train,
+                self.y_train,
+                self.X_test,
+                self.y_test,
+                self.Model)
 
 
 def validate_input(argument, input_value, options):
@@ -626,8 +627,8 @@ if __name__ == "__main__":
     #                   scalar='power', balancer='smote')
     for data in ['text', 'non_text', 'both']:
         for target in ['T2_CLS_ufc_>0', 'T5_CLS_ufc_level_TD']:
-            for model in ['Log Reg', 'Forest Cls', 'HGB Cls', 'XGB Cls']:
-                pipeline = ModelPipeline(run_on_aws=True)
+            for model in ['Log Reg']:
+                pipeline = ModelPipeline(run_on_aws=False)
                 pipeline.run_full_pipeline(use_cv=True, print_results=True,
                                            save_results=True, question='td',
                                            records=10000, data=data,

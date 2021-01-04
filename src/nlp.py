@@ -5,7 +5,7 @@ import spacy
 import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import (RandomizedSearchCV)
+from sklearn.model_selection import GridSearchCV
 from sklearn.feature_extraction.text import (CountVectorizer,
                                              TfidfTransformer)
 
@@ -168,18 +168,16 @@ class NLPPipeline():
                 else:
                     scoring = self.model_setup.cls_scoring
                 cv_pipeline = \
-                    RandomizedSearchCV(estimator=vector_pipeline,
-                                       param_distributions=param_dict,
-                                       n_iter=10,
-                                       scoring=scoring,
-                                       n_jobs=None,
-                                       cv=None,
-                                       refit='Accuracy',
-                                       random_state=7)
+                    GridSearchCV(estimator=vector_pipeline,
+                                 param_grid=param_dict,
+                                 scoring=scoring,
+                                 n_jobs=-1,
+                                 cv=None,
+                                 refit='Accuracy')
                 cv_pipeline.fit(self.X_train['review_text'], self.y_train)
                 if self.show_results:
+                    print(f'Model: {nlp_model.upper()}\n')
                     if self.use_cv:
-                        print(f'Model: {nlp_model.upper()}\n')
                         # print(pd.DataFrame(cv_pipeline.cv_results_))
                         print('\nBest Hyperparameters:')
                         pprint.pprint(cv_pipeline.best_estimator_)
@@ -226,14 +224,12 @@ class NLPPipeline():
                         {f'model__{k}': v for (k, v) in
                          self.model_setup.nlp_params[nlp_model].items()}
                 cv_pipeline = \
-                    RandomizedSearchCV(estimator=vector_pipeline,
-                                       param_distributions=param_dict,
-                                       n_iter=10,
-                                       scoring=self.model_setup.reg_scoring,
-                                       n_jobs=None,
-                                       cv=None,
-                                       refit='R2 Score',
-                                       random_state=7)
+                    GridSearchCV(estimator=vector_pipeline,
+                                 param_grid=param_dict,
+                                 scoring=self.model_setup.reg_scoring,
+                                 n_jobs=-1,
+                                 cv=None,
+                                 refit='R2 Score')
                 cv_pipeline.fit(self.X_train['review_text'], self.y_train)
                 if self.show_results:
                     if self.use_cv:

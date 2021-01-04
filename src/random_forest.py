@@ -86,7 +86,7 @@ def autolabel(rects, axe, xpos='center'):
                  weight='bold')
 
 
-def model_performace_metrics(forest, X_train, X_test, y_train, y_test):
+def model_performance_metrics(forest, X_train, X_test, y_train, y_test):
     """
     Prints and returns common model performance metrics.
 
@@ -103,8 +103,8 @@ def model_performace_metrics(forest, X_train, X_test, y_train, y_test):
                                 - performance metrics
                                 - performance metric labels
     """
-    oobscore = forest.oob_score_
-    print(f'Out-of-Bag Score: {oobscore:.2f}')
+    # oobscore = forest.oob_score_
+    # print(f'Out-of-Bag Score: {oobscore:.2f}')
 
     train_accuracy_score = forest.score(X_train, y_train)
     print(f'Train Accuracy: {train_accuracy_score:.2f}')
@@ -201,18 +201,11 @@ if __name__ == "__main__":
 
     forest.fit(X_train, y_train)
 
-    rounded_model_results = model_performace_metrics(forest, X_train,
-                                                     X_test, y_train,
-                                                     y_test)[0]
-    model_results_labels = model_performace_metrics(forest, X_train,
-                                                    X_test, y_train,
-                                                    y_test)[1]
-    rounded_performance_metrics = model_performace_metrics(forest, X_train,
-                                                           X_test, y_train,
-                                                           y_test)[2]
-    performance_metrics_labels = model_performace_metrics(forest, X_train,
-                                                          X_test, y_train,
-                                                          y_test)[3]
+    (rounded_model_results, model_results_labels,
+     rounded_performance_metrics, performance_metrics_labels) = \
+        model_performance_metrics(forest, X_train,
+                                  X_test, y_train,
+                                  y_test)
 
     def create_model_performance_plot(save=False):
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
@@ -280,7 +273,7 @@ if __name__ == "__main__":
     legend_elements = [Line2D([0], [0], color='tab:blue', lw=20,
                               label='User Data'),
                        Line2D([0], [0], color='tab:red', lw=20,
-                              label='Restaurant Data'),
+                              label='Business Data'),
                        Line2D([0], [0], color='tab:gray', lw=20,
                               label='Review Data')]
 

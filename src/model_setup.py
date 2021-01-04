@@ -117,7 +117,7 @@ class ModelSetupInfo():
                          'C': [0.1, 0.5, 1.0, 2],
                          'class_weight': ['balanced'],
                          'random_state': [7],
-                         'solver': ['saga', 'lbfgs', 'newton-cg'],
+                         'solver': ['saga', 'lbfgs'],
                          'max_iter': [50, 100, 1000, 5000]},
              'Forest Cls': {'n_estimators': [10, 50, 100, 200],
                             'criterion': ['gini'],
@@ -157,14 +157,14 @@ class ModelSetupInfo():
                          'random_state': [7],
                          'solver': ['saga'],
                          'max_iter': [1000]},
-             'Forest Cls': {'n_estimators': [10],
+             'Forest Cls': {'n_estimators': [100],
                             'criterion': ['gini'],
-                            'max_depth': [100],
+                            'max_depth': [None],
                             'min_samples_split': [2],
                             'min_samples_leaf': [1],
                             'max_features': ['sqrt'],
-                            'max_leaf_nodes': [100],
-                            'class_weight': ['balanced'],
+                            'max_leaf_nodes': [None],
+                            'class_weight': [None],
                             'max_samples': [None],
                             'random_state': [7]},
              'HGB Cls': {'loss': ['auto'],
@@ -200,13 +200,11 @@ class ModelSetupInfo():
              'sgd_reg': SGDRegressor,
              'naive_bayes': MultinomialNB}
         self.nlp_params_cv = \
-            {'sgd_cls': {'loss': ['hinge', 'log', 'modified_huber',
-                                  'squared_hinge', 'perceptron'],
-                         'penalty': ['elasticnet'],
-                         'l1_ratio': [0, 0.15, 0.35, 0.5, 0.75],
-                         'alpha': [0.00001, 0.0001, 0.001, 0.1],
+            {'sgd_cls': {'loss': ['hinge'],
+                         'penalty': ['l2'],
+                         'alpha': [0.001],
                          'random_state': [7],
-                         'max_iter': [50, 100, 1000],
+                         'max_iter': [100],
                          'class_weight': ['balanced']},
              'sgd_reg': {'loss': ['squared_loss', 'huber',
                                   'epsilon_insensitive',
@@ -216,12 +214,11 @@ class ModelSetupInfo():
                          'alpha': [0.0001, 0.001, 0.1],
                          'random_state': [7],
                          'max_iter': [50, 100, 1000]},
-             'naive_bayes': {'alpha': [0.1, 0.5, 1, 2]}}
+             'naive_bayes': {'alpha': [0.5]}}
         self.nlp_params = \
             {'sgd_cls': {'loss': ['hinge'],
-                         'penalty': ['elasticnet'],
-                         'l1_ratio': [0.15],
-                         'alpha': [0.0001],
+                         'penalty': ['l2'],
+                         'alpha': [0.001],
                          'random_state': [7],
                          'max_iter': [100],
                          'class_weight': ['balanced']},
@@ -231,7 +228,7 @@ class ModelSetupInfo():
                          'alpha': [0.0001],
                          'random_state': [7],
                          'max_iter': [100]},
-             'naive_bayes': {'alpha': [1]}}
+             'naive_bayes': {'alpha': [0.5]}}
 
 
 if __name__ == "__main__":
