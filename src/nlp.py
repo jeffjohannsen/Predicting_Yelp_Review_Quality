@@ -45,25 +45,26 @@ class NLPPipeline():
                                                          x.lower()))
             df['words'] = \
                 df['processed_text'].apply(lambda x: x.split(' '))
-            df['review_char_count'] = \
+            df['review_text_char_count'] = \
                 df['review_text'].apply(lambda x: len(x))
-            df['review_word_count'] = df['words'].apply(lambda x: len(x))
-            df['review_char_per_word'] = \
-                df['review_char_count'] / df['review_word_count']
+            df['review_text_word_count'] = df['words'].apply(lambda x: len(x))
+            df['review_text_char_per_word'] = \
+                df['review_text_char_count'] / df['review_text_word_count']
             df.drop(labels=['processed_text', 'words'], axis=1, inplace=True)
 
     def create_readability_features(self):
         """
         Adds readability features using textstat library.
         Numbers represent grade level needed to understand the text.
+        ari: Automated Readability Index
         """
         for df in [self.X_train, self.X_test]:
-            df['review_readability_flesch_kincaid'] = \
+            df['review_text_readability_flesch_kincaid'] = \
                 df['review_text'].apply(lambda x:
                                         textstat.flesch_kincaid_grade(x))
-            df['review_readability_combined_methods'] = \
+            df['review_text_ari'] = \
                 df['review_text'].apply(lambda x:
-                                        textstat.text_standard(x, float_output=True))
+                                        textstat.automated_readability_index(x))
 
     def create_spacy_features(self):
         """
@@ -83,15 +84,15 @@ class NLPPipeline():
             nlp = spacy.load("en_core_web_sm")
 
             df['spacy_doc'] = df['review_text'].apply(lambda x: nlp(x))
-            df['review_token_count'] = \
+            df['review_text_token_count'] = \
                 df['spacy_doc'].apply(lambda x: len(x))
-            df['review_token_count'] = \
+            df['review_text_perc_stop_words'] = \
                 df['spacy_doc'].apply(lambda x:
                                       round(len([token for
                                                  token in x
                                                  if token.is_stop])
                                             / len(x), 5))
-            df['review_perc_ent'] = \
+            df['review_text_perc_ent'] = \
                 df['spacy_doc'].apply(lambda x:
                                       round(len([token for
                                                  token in x.ents])
@@ -101,7 +102,7 @@ class NLPPipeline():
                         'NOUN', 'NUM', 'PART', 'PRON', 'PROPN', 'PUNCT',
                         'SCONJ', 'SYM', 'VERB', 'X'}
             for pos in pos_list:
-                df[f'review_perc_{pos.lower()}'] = \
+                df[f'review_text_perc_{pos.lower()}'] = \
                     df['spacy_doc'].apply(lambda x:
                                           round(len([token for
                                                      token in x
@@ -118,7 +119,7 @@ class NLPPipeline():
                         'predet', 'prep', 'prt', 'punct', 'quantmod',
                         'relcl', 'xcomp']
             for dep in dep_list:
-                df[f'review_perc_{dep.lower()}'] = \
+                df[f'review_text_perc_{dep.lower()}'] = \
                     df['spacy_doc'].apply(lambda x:
                                           round(len([token for
                                                      token in x
@@ -130,7 +131,7 @@ class NLPPipeline():
                         'PERCENT', 'PERSON', 'PRODUCT', 'QUANTITY',
                         'TIME', 'WORK_OF_ART']
             for ent in ent_list:
-                df[f'review_perc_{ent.lower()}'] = \
+                df[f'review_text_perc_{ent.lower()}'] = \
                     df['spacy_doc'].apply(lambda x:
                                           round(len([y for
                                                      y in x.ents
@@ -197,11 +198,11 @@ class NLPPipeline():
                     if nlp_model == 'sgd_cls':
                         sgd_cls_pred = cv_pipeline.predict(df['review_text'])
                         for cls_name in cv_pipeline.best_estimator_.named_steps['model'].classes_:
-                            df[f'review_{nlp_model}_pred_{cls_name}'] = [1 if cls_name == sgd_cls_pred[x] else 0 for x in range(len(sgd_cls_pred))]
+                            df[f'review_text_{nlp_model}_pred_{cls_name}'] = [1 if cls_name == sgd_cls_pred[x] else 0 for x in range(len(sgd_cls_pred))]
                     elif nlp_model == 'naive_bayes':
                         nb_pred_proba = cv_pipeline.predict_proba(df['review_text'])
                         for idx, cls_name in enumerate(cv_pipeline.best_estimator_.named_steps['model'].classes_):
-                            df[f'review_{nlp_model}_pred_{cls_name}'] = \
+                            df[f'review_text_{nlp_model}_pred_{cls_name}'] = \
                                 nb_pred_proba[:, idx]
                     else:
                         print('NLP model error.')
@@ -259,7 +260,7 @@ class NLPPipeline():
                           f'{baseline_rmse:.2f}, Difference: '
                           f'{(baseline_rmse - model_rmse):.2f}\n')
                 for df in [self.X_train, self.X_test]:
-                    df[f'review_{nlp_model}_pred'] = \
+                    df[f'review_text_{nlp_model}_pred'] = \
                         cv_pipeline.predict(df['review_text'])
         else:
             print('NLP saved goal is invalid.')

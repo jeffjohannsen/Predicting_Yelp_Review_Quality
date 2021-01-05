@@ -114,14 +114,16 @@ class ModelPipeline():
     """
     Full model testing pipeline from loading data to prediction metrics.
     """
-    def __init__(self, run_on_aws):
+    def __init__(self, run_on_aws=False):
         """
         Args:
-            run_on_aws (bool): True if running on aws, else False.
+            run_on_aws (bool, optional): True if running on aws, else False.
+                                         Defaults to False.
         """
         self.aws = run_on_aws
         self.setup = ModelSetupInfo()
         self.model_details = ModelDetailsStorage(self.aws)
+        self.use_cv = None
         self.data = None
         self.X_train = None
         self.y_train = None
@@ -185,7 +187,7 @@ class ModelPipeline():
         date, target, features, goal, scalar.
 
         Args:
-            datatype (str): Options: ('text', 'non_text', 'both)
+            datatype (str): Options: ('text', 'non_text', 'both')
                 Whether to load the review text, the metadata, or both.
 
             target (str): Options: ('T1_REG_review_total_ufc',
@@ -260,6 +262,7 @@ class ModelPipeline():
                 Level 3: Spacy Language Features
                 Level 4: Text Readability Grade Level
         """
+        self.use_cv = use_cv
         if self.datatype != 'non_text':
             training_text_features = \
                 self.X_train.loc[:, ['review_id', 'review_text']].copy()
@@ -334,6 +337,9 @@ class ModelPipeline():
         Returns:
             Object: Fitted model.
         """
+        self.use_cv = use_cv
+        feature_labels = self.X_train.columns
+
         if scalar == 'standard':
             data_scale = 'Standard'
         elif scalar == 'power':
@@ -348,6 +354,8 @@ class ModelPipeline():
             scalar = self.setup.scalars[data_scale]()
             self.X_train = scalar.fit_transform(self.X_train)
             self.X_test = scalar.transform(self.X_test)
+            self.X_train = pd.DataFrame(self.X_train, columns=feature_labels)
+            self.X_test = pd.DataFrame(self.X_test, columns=feature_labels)
 
         if balancer not in [None, 'smote']:
             print('Invalid balancer argument')
@@ -361,32 +369,34 @@ class ModelPipeline():
         if (model_type in self.setup.cls_models) and (self.goal == 'cls'):
             if use_cv:
                 param_grid = self.setup.cls_params_cv[model_type]
+                Model = GridSearchCV(self.setup.cls_models[model_type](),
+                                     param_grid,
+                                     scoring=self.setup.cls_scoring,
+                                     n_jobs=-1,
+                                     cv=None,
+                                     refit='Accuracy')
             else:
-                param_grid = self.setup.cls_params[model_type]
-            ModelCV = GridSearchCV(self.setup.cls_models[model_type](),
-                                   param_grid,
-                                   scoring=self.setup.cls_scoring,
-                                   n_jobs=-1,
-                                   cv=None,
-                                   refit='Accuracy')
+                params = self.setup.cls_params[model_type]
+                Model = self.setup.cls_models[model_type](**params)
         elif (model_type in self.setup.reg_models) and (self.goal == 'reg'):
             if use_cv:
-                param_grid = self.setup.cls_params_cv[model_type]
+                param_grid = self.setup.reg_params_cv[model_type]
+                Model = GridSearchCV(self.setup.reg_models[model_type](),
+                                     param_grid,
+                                     scoring=self.setup.reg_scoring,
+                                     n_jobs=-1,
+                                     cv=None,
+                                     refit='R2 Score')
             else:
-                param_grid = self.setup.cls_params[model_type]
-            ModelCV = GridSearchCV(self.setup.reg_models[model_type](),
-                                   param_grid,
-                                   scoring=self.setup.reg_scoring,
-                                   n_jobs=-1,
-                                   cv=None,
-                                   refit='R2 Score')
+                params = self.setup.reg_params[model_type]
+                Model = self.setup.reg_models[model_type](**params)
         else:
             print('Invalid model type. Make sure the model is in model_setup '
                   'and has the correct goal. '
                   '(classification or regression)')
             exit()
-        ModelCV.fit(self.X_train, self.y_train)
-        self.Model = ModelCV
+        Model.fit(self.X_train, self.y_train)
+        self.Model = Model
         self.model_details.working_record['balancer'] = balancer
         self.model_details.working_record['model_type'] = model_type
 
@@ -441,24 +451,26 @@ class ModelPipeline():
         """
         Stores results of CV.
         """
-        cv_results = pd.DataFrame(self.Model.cv_results_)
-        for i in list(range(len(cv_results.index))):
-            if i != self.Model.best_index_:
-                self.store_CV_metrics(self.model_details.working_record,
-                                      cv_results, i)
-                self.model_details.working_record['record_type'] = 'cv'
-                self.model_details.add_record_to_list()
-        self.store_CV_metrics(self.model_details.working_record, cv_results,
-                              self.Model.best_index_)
-        self.model_details.working_record['record_type'] = 'test'
-        self.model_details.working_record['refit_time'] = \
-            round(self.Model.refit_time_, 5)
+        if self.use_cv:
+            cv_results = pd.DataFrame(self.Model.cv_results_)
+            for i in list(range(len(cv_results.index))):
+                if i != self.Model.best_index_:
+                    self.store_CV_metrics(self.model_details.working_record,
+                                          cv_results, i)
+                    self.model_details.working_record['record_type'] = 'cv'
+                    self.model_details.add_record_to_list()
+            self.store_CV_metrics(self.model_details.working_record,
+                                  cv_results, self.Model.best_index_)
+            self.model_details.working_record['refit_time'] = \
+                round(self.Model.refit_time_, 5)
+        
 
     def predict_and_store(self):
         """
         Uses fitted model to predict on test set.
         Adds metrics to model_details.working_record.
         """
+        self.model_details.working_record['record_type'] = 'test'
         self.y_pred = self.Model.predict(self.X_test)
         if self.goal == 'cls':
             self.y_pred_proba = \
