@@ -218,7 +218,7 @@ def plot_permutation_importances(forest, X_train, y_train, num=20, save=False):
     pi_labels = [feature.replace('_', ' ').title() for
                  feature in X_train.columns[perm_sorted_idx]][:num]
     x_data_pi = np.arange(len(X_train.columns))[:num]
-    y_data_pi = result.importances_mean[perm_sorted_idx].T[:num]
+    y_data_pi = (result.importances_mean[perm_sorted_idx].T)[:num]
     fig, ax = plt.subplots(figsize=(12, 9))
     bar_colors_pi = list(map(bar_color_chooser, pi_labels))
     ax.bar(x_data_pi, y_data_pi, color=bar_colors_pi)
@@ -237,7 +237,6 @@ def plot_permutation_importances(forest, X_train, y_train, num=20, save=False):
                               label='Review Text Data')]
     ax.legend(handles=legend_elements)
     fig.tight_layout()
-    plt.show()
     if save:
         plt.savefig('permutation_importances.png', dpi=300,
                     bbox_inches='tight')
@@ -311,7 +310,7 @@ def plot_feature_correlation(X_train):
     for idx, cluster_id in enumerate(cluster_ids):
         cluster_id_to_feature_ids[cluster_id].append(idx)
     selected_features = [v[0] for v in cluster_id_to_feature_ids.values()]
-    print(X_train.columns[selected_features])
+    return corr_linkage
 
 
 if __name__ == "__main__":
@@ -319,6 +318,7 @@ if __name__ == "__main__":
     pd.set_option('display.max_columns', 100)
     pd.set_option("max_rows", 1000)
     pd.set_option('display.float_format', lambda x: '%.5f' % x)
+    pd.options.mode.use_inf_as_na = True
     plt.style.use('fivethirtyeight')
     plt.rcParams.update({'font.size': 16, 'font.family': 'sans'})
 
@@ -326,9 +326,10 @@ if __name__ == "__main__":
     X_train, y_train, X_test, y_test, fitted_forest = \
         pipeline.run_full_pipeline(use_cv=False, print_results=True,
                                    save_results=True, question='td',
-                                   records=100, data='both',
+                                   records=1000, data='both',
                                    target='T2_CLS_ufc_>0', model='Forest Cls',
-                                   scalar='no_scaling', balancer=None)
+                                   scalar='power', balancer='smote')
+
     print('Training Data:')
     print_data_info(y_train, X_train)
     print('Testing Data:')
@@ -341,4 +342,24 @@ if __name__ == "__main__":
     plot_model_performance(results, metrics)
     plot_feature_importances(fitted_forest, X_train)
     plot_permutation_importances(fitted_forest, X_train, y_train)
-    plot_feature_correlation(X_train)
+    corr_linkage = plot_feature_correlation(X_train)
+
+    cluster_ids = hierarchy.fcluster(corr_linkage, 2, criterion='distance')
+    cluster_id_to_feature_ids = defaultdict(list)
+    for idx, cluster_id in enumerate(cluster_ids):
+        cluster_id_to_feature_ids[cluster_id].append(idx)
+    selected_features = [v[0] for v in cluster_id_to_feature_ids.values()]
+
+    X_train_sel = X_train.iloc[:, selected_features]
+    X_test_sel = X_test.iloc[:, selected_features]
+
+    clf_sel = RandomForestClassifier(n_estimators=100, random_state=7)
+    clf_sel.fit(X_train_sel, y_train)
+
+    (results, results_labels, metrics, metrics_labels) = \
+        create_model_performance_metrics(clf_sel, X_train_sel, X_test_sel,
+                                         y_train, y_test)
+    plot_model_performance(results, metrics)
+    plot_feature_importances(clf_sel, X_train_sel, num=10)
+    plot_permutation_importances(clf_sel, X_train_sel, y_train, num=10)
+    corr_linkage = plot_feature_correlation(X_train_sel)

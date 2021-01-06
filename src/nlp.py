@@ -197,13 +197,21 @@ class NLPPipeline():
                 for df in [self.X_train, self.X_test]:
                     if nlp_model == 'sgd_cls':
                         sgd_cls_pred = cv_pipeline.predict(df['review_text'])
-                        for cls_name in cv_pipeline.best_estimator_.named_steps['model'].classes_:
-                            df[f'review_text_{nlp_model}_pred_{cls_name}'] = [1 if cls_name == sgd_cls_pred[x] else 0 for x in range(len(sgd_cls_pred))]
+                        if len(cv_pipeline.best_estimator_.named_steps['model'].classes_) == 2:
+                            df[f'review_text_{nlp_model}_pred'] = [1 if (sgd_cls_pred.ravel()[x] == True) else 0 for x in range(len(sgd_cls_pred.ravel()))]
+                        else:
+                            for cls_name in cv_pipeline.best_estimator_.named_steps['model'].classes_:
+                                df[f'review_text_{nlp_model}_pred_{cls_name}'] = [1 if cls_name == sgd_cls_pred[x] else 0 for x in range(len(sgd_cls_pred))]
                     elif nlp_model == 'naive_bayes':
                         nb_pred_proba = cv_pipeline.predict_proba(df['review_text'])
-                        for idx, cls_name in enumerate(cv_pipeline.best_estimator_.named_steps['model'].classes_):
-                            df[f'review_text_{nlp_model}_pred_{cls_name}'] = \
-                                nb_pred_proba[:, idx]
+                        if len(cv_pipeline.best_estimator_.named_steps['model'].classes_) == 2:
+                            idx = np.where(cv_pipeline.best_estimator_.named_steps['model'].classes_ == True)
+                            df[f'review_text_{nlp_model}_pred'] = \
+                                [float(nb_pred_proba[x, idx]) for x in range(len(nb_pred_proba[:, 0]))]
+                        else:
+                            for idx, cls_name in enumerate(cv_pipeline.best_estimator_.named_steps['model'].classes_):
+                                df[f'review_text_{nlp_model}_pred_{cls_name}'] = \
+                                    nb_pred_proba[:, idx]
                     else:
                         print('NLP model error.')
                         exit()
