@@ -1,8 +1,10 @@
 
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from scipy.stats.stats import mode
 from sqlalchemy import create_engine
 from collections import defaultdict
 from scipy.stats import spearmanr
@@ -147,7 +149,8 @@ def load_data_from_yelp_2(table, num_records):
     return df
 
 
-def plot_model_performance(results, metrics, save=False):
+def plot_model_performance(results, metrics, save=False,
+                           filename='model_metrics'):
     """
     Creates plots showing the results of testing
     a binary classification model.
@@ -163,7 +166,7 @@ def plot_model_performance(results, metrics, save=False):
         save (bool, optional): Whether or not to save the plots to file.
                                 Defaults to False.
     """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 9))
     # Data
     x_data_ax1 = np.arange(4)
     x_data_ax2 = np.arange(4)
@@ -196,12 +199,74 @@ def plot_model_performance(results, metrics, save=False):
     autolabel(rects2, ax2, "center")
     fig.tight_layout()
     if save:
-        plt.savefig('model_results.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'../images/{filename}.png', dpi=300, bbox_inches='tight')
+        plt.close()
     else:
         plt.show()
 
 
-def plot_permutation_importances(forest, X_train, y_train, num=20, save=False):
+def plot_model_performance_vs_baseline(results, accuracy,
+                                       baseline, save=False,
+                                       filename='model_metrics'):
+    """
+    Creates plots showing the results of testing
+    a binary classification model.
+
+    Args:
+        results (list-like of numeric): Order Matters.
+            True Positives, True Negatives,
+            False Positives, False Negatives
+
+        accuracy (float): Model accuracy.
+
+        baseline (float): Baseline accuracy.
+
+        save (bool, optional): Whether or not to save the plots to file.
+                                Defaults to False.
+    """
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 9))
+    # Data
+    x_data_ax1 = np.arange(4)
+    x_data_ax2 = np.arange(2)
+    y_data_ax1 = results
+    y_data_ax2 = [accuracy, baseline]
+    # Labels
+    model_results_labels = ['True Positives', 'True Negatives',
+                            'False Positives', 'False Negatives']
+    # Plotting model results
+    bar_colors_ax1 = ['tab:blue', 'tab:blue', 'tab:red', 'tab:red']
+    rects1 = ax1.bar(x_data_ax1, y_data_ax1, color=bar_colors_ax1)
+    ax1.set_title("Model Results", fontweight="bold")
+    ax1.set_ylabel("Percent of Model Predictions", fontweight="bold")
+    ax1.set_ylim(0, 105)
+    ax1.set_xticks(x_data_ax1)
+    ax1.set_xticklabels(model_results_labels, rotation=45,
+                        ha="right", fontweight='bold')
+    autolabel(rects1, ax1, "center")
+    # Plotting performance metrics
+    bar_colors_ax2 = ['tab:blue', 'tab:red']
+    rects2 = ax2.bar(x_data_ax2, y_data_ax2, color=bar_colors_ax2)
+    ax2.set_title("Prediction Accuracy", fontweight="bold")
+    ax2.set_ylim(0, 105)
+    ax2.set_xticks(x_data_ax2)
+    ax2.set_xticklabels(['Model Accuracy', 'Baseline Accuracy'], rotation=0,
+                        ha="center", fontweight='bold')
+
+    for rect in rects2:
+        height = rect.get_height()
+        ax2.text(rect.get_x() + rect.get_width()*0.5, 1.01*height,
+                 f'{round(height)}%', ha='center', va='bottom', fontsize=20,
+                 weight='bold')
+    fig.tight_layout()
+    if save:
+        plt.savefig(f'../images/{filename}.png', dpi=300, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_permutation_importances(forest, X_train, y_train, num=20,
+                                 save=False, filename='per_imp'):
     """
     Plots permutation importances for a fitted random forest.
 
@@ -219,7 +284,7 @@ def plot_permutation_importances(forest, X_train, y_train, num=20, save=False):
                  feature in X_train.columns[perm_sorted_idx]][:num]
     x_data_pi = np.arange(len(X_train.columns))[:num]
     y_data_pi = (result.importances_mean[perm_sorted_idx].T)[:num]
-    fig, ax = plt.subplots(figsize=(12, 9))
+    fig, ax = plt.subplots(figsize=(16, 9))
     bar_colors_pi = list(map(bar_color_chooser, pi_labels))
     ax.bar(x_data_pi, y_data_pi, color=bar_colors_pi)
     ax.set_title("Permutation Importances", fontweight="bold")
@@ -238,13 +303,13 @@ def plot_permutation_importances(forest, X_train, y_train, num=20, save=False):
     ax.legend(handles=legend_elements)
     fig.tight_layout()
     if save:
-        plt.savefig('permutation_importances.png', dpi=300,
-                    bbox_inches='tight')
+        plt.savefig(f'../images/{filename}.png', dpi=300, bbox_inches='tight')
+        plt.close()
     else:
         plt.show()
 
 
-def plot_feature_importances(forest, X_train, num=20, save=False):
+def plot_feature_importances(forest, X_train, num=20, save=False, filename='feat_imp'):
     """
     Plots feature importances for a fitted random forest.
 
@@ -259,7 +324,7 @@ def plot_feature_importances(forest, X_train, num=20, save=False):
     y_data_fi = forest.feature_importances_[tree_importance_sorted_idx][:num]
     fi_labels = [feature.replace('_', ' ').title() for
                  feature in X_train.columns[tree_importance_sorted_idx]][:num]
-    fig, ax = plt.subplots(figsize=(12, 9))
+    fig, ax = plt.subplots(figsize=(16, 9))
     bar_colors_fi = list(map(bar_color_chooser, fi_labels))
     ax.bar(x_data_fi, y_data_fi, color=bar_colors_fi)
     ax.set_title("Feature Importances", fontweight="bold")
@@ -278,19 +343,20 @@ def plot_feature_importances(forest, X_train, num=20, save=False):
     ax.legend(handles=legend_elements)
     fig.tight_layout()
     if save:
-        plt.savefig('feature_importances.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'../images/{filename}.png', dpi=300, bbox_inches='tight')
+        plt.close()
     else:
         plt.show()
 
 
-def plot_feature_correlation(X_train):
+def plot_feature_correlation(X_train, save=False, filename='feat_corr'):
     """
     Plots and prints correlation data between features.
 
     Args:
         X_train (Dataframe): Features data.
     """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 9))
     corr = spearmanr(X_train).correlation
     corr_linkage = hierarchy.ward(corr)
     dendro = hierarchy.dendrogram(corr_linkage,
@@ -304,12 +370,11 @@ def plot_feature_correlation(X_train):
     ax2.set_xticklabels(dendro['ivl'], rotation='vertical')
     ax2.set_yticklabels(dendro['ivl'])
     fig.tight_layout()
-    plt.show()
-    cluster_ids = hierarchy.fcluster(corr_linkage, 1, criterion='distance')
-    cluster_id_to_feature_ids = defaultdict(list)
-    for idx, cluster_id in enumerate(cluster_ids):
-        cluster_id_to_feature_ids[cluster_id].append(idx)
-    selected_features = [v[0] for v in cluster_id_to_feature_ids.values()]
+    if save:
+        plt.savefig(f'../images/{filename}.png', dpi=300, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
     return corr_linkage
 
 
@@ -322,44 +387,72 @@ if __name__ == "__main__":
     plt.style.use('fivethirtyeight')
     plt.rcParams.update({'font.size': 16, 'font.family': 'sans'})
 
-    pipeline = ModelPipeline(False)
-    X_train, y_train, X_test, y_test, fitted_forest = \
-        pipeline.run_full_pipeline(use_cv=False, print_results=True,
-                                   save_results=True, question='td',
-                                   records=1000, data='both',
-                                   target='T2_CLS_ufc_>0', model='Forest Cls',
-                                   scalar='power', balancer='smote')
+    for datatype in ['text', 'non_text', 'both']:
+        record_count = 100000
+        pipeline = ModelPipeline(False)
+        X_train, y_train, X_test, y_test, fitted_forest = \
+            pipeline.run_full_pipeline(use_cv=False, print_results=True,
+                                       save_results=True, question='td',
+                                       records=record_count, data=datatype,
+                                       target='T2_CLS_ufc_>0',
+                                       model='Forest Cls',
+                                       scalar='power', balancer='smote')
 
-    print('Training Data:')
-    print_data_info(y_train, X_train)
-    print('Testing Data:')
-    print_data_info(y_test, X_test)
-    print()
-    print('Testing Results:')
-    (results, results_labels, metrics, metrics_labels) = \
-        create_model_performance_metrics(fitted_forest, X_train, X_test,
-                                         y_train, y_test)
-    plot_model_performance(results, metrics)
-    plot_feature_importances(fitted_forest, X_train)
-    plot_permutation_importances(fitted_forest, X_train, y_train)
-    corr_linkage = plot_feature_correlation(X_train)
+        model_finish_time = datetime.now()
+        model_finish_time = model_finish_time.strftime("%Y-%m-%d_%H-%M-%S")
+        filename_suffix = f'_{record_count}_{model_finish_time}'
 
-    cluster_ids = hierarchy.fcluster(corr_linkage, 2, criterion='distance')
-    cluster_id_to_feature_ids = defaultdict(list)
-    for idx, cluster_id in enumerate(cluster_ids):
-        cluster_id_to_feature_ids[cluster_id].append(idx)
-    selected_features = [v[0] for v in cluster_id_to_feature_ids.values()]
+        print('Training Data:')
+        print_data_info(y_train, X_train)
+        print('Testing Data:')
+        print_data_info(y_test, X_test)
+        test_data_baseline_percent = \
+            (y_test.value_counts().max() / len(y_test)) * 100
+        print()
+        print('Testing Results:')
 
-    X_train_sel = X_train.iloc[:, selected_features]
-    X_test_sel = X_test.iloc[:, selected_features]
+        (results, results_labels, metrics, metrics_labels) = \
+            create_model_performance_metrics(fitted_forest, X_train, X_test,
+                                             y_train, y_test)
+        plot_model_performance_vs_baseline(results, metrics[0],
+                                           test_data_baseline_percent,
+                                           save=True,
+                                           filename=f'model_perf_rec{filename_suffix}')
+        plot_feature_importances(fitted_forest, X_train, save=True,
+                                 filename=f'feat_imp{filename_suffix}')
+        plot_permutation_importances(fitted_forest, X_train, y_train,
+                                     save=True, filename=f'per_imp{filename_suffix}')
+        corr_linkage = \
+            plot_feature_correlation(X_train, save=True,
+                                     filename=f'feat_corr{filename_suffix}')
 
-    clf_sel = RandomForestClassifier(n_estimators=100, random_state=7)
-    clf_sel.fit(X_train_sel, y_train)
+        cluster_ids = hierarchy.fcluster(corr_linkage, 2, criterion='distance')
+        cluster_id_to_feature_ids = defaultdict(list)
+        for idx, cluster_id in enumerate(cluster_ids):
+            cluster_id_to_feature_ids[cluster_id].append(idx)
+        selected_features = [v[0] for v in cluster_id_to_feature_ids.values()]
 
-    (results, results_labels, metrics, metrics_labels) = \
-        create_model_performance_metrics(clf_sel, X_train_sel, X_test_sel,
-                                         y_train, y_test)
-    plot_model_performance(results, metrics)
-    plot_feature_importances(clf_sel, X_train_sel, num=10)
-    plot_permutation_importances(clf_sel, X_train_sel, y_train, num=10)
-    corr_linkage = plot_feature_correlation(X_train_sel)
+        X_train_sel = X_train.iloc[:, selected_features]
+        X_test_sel = X_test.iloc[:, selected_features]
+
+        clf_sel = RandomForestClassifier(n_estimators=100, random_state=7)
+        clf_sel.fit(X_train_sel, y_train)
+
+        (results, results_labels, metrics, metrics_labels) = \
+            create_model_performance_metrics(clf_sel, X_train_sel, X_test_sel,
+                                             y_train, y_test)
+        plot_model_performance_vs_baseline(results, metrics[0],
+                                           test_data_baseline_percent,
+                                           save=True,
+                                           filename=f'model_perf_rec{filename_suffix}_b')
+        plot_feature_importances(clf_sel, X_train_sel, num=10, save=True,
+                                 filename=f'feat_imp{filename_suffix}_b')
+        plot_permutation_importances(clf_sel, X_train_sel, y_train,
+                                     num=10, save=True,
+                                     filename=f'per_imp{filename_suffix}_b')
+        corr_linkage = \
+            plot_feature_correlation(X_train_sel, save=True,
+                                     filename=f'feat_corr{filename_suffix}_b')
+
+
+

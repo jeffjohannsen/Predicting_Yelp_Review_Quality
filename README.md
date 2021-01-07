@@ -38,7 +38,7 @@ Working with and better understanding the data available to these companies will
 
 ## Goal and Central Questions
 
-The goal of this project is to explore a way to increase user retention, satisfaction, and engagement for Yelp and any other company that incorporates reviews within its platform. These improvements will be accomplished by predicting the highest quality reviews via information gained from the review text and data surrounding the reviews.
+The goal of my project is to explore a way to increase user retention, satisfaction, and engagement for Yelp and other companies that incorporate reviews into their platforms. This will be accomplished by predicting the highest quality reviews given knowledge gained from the review text and the data surrounding the reviews.
 
 ### Central Questions
 ### 1. Can the quality of a review be determined by the review text or the data surrounding the review?
@@ -102,19 +102,32 @@ The original working data was not going to be very usable for analysis and machi
 ## Data Cleaning
 
 The main data cleaning steps included:
-* Dropping Nan/Null Values 
+* Dropping Nan/Null Values
+    * The dataset had plenty of data and a relatively low amount of Nan/Null values so any records with Nan/Nulls were dropped.
 * Removing Duplicate Records
 * Deleting Unnecessary Features
+    * Overall the data had over 100 features and a lot of them were not useful for answering the central questions.
 * Converting Data-types
+    * This mostly consisted of converting text strings to datetime stamps.
 * Organizing Features
+    * Features were grouped by source type and sorted to make them easier to wok with during eda and feature engineering.
 
 ## Time Discounting
 
-When trying to use the data to answer the questions I want to answer, the passage of time creates an issue that must be addressed. 
+When trying to use the data to answer the questions I wanted to answer, the passage of time creates an issue that must be addressed. 
+A lot of the datapoints are counts that were saved at the time the dataset was made public in 2020.
+These datapoints increase over time so if we want to use them to predict a review at the time it was created, these datapoints need to be adjusted to represent what they would have been at the time of the review.   
 
 ## Target Creation
 
 The first goal is to predict the quality of a review but what exactly should we be trying to predict?
+Options: 
+1. Whether a review is quality or not. (Binary Classification)
+2. The level of review quality. Zero, Low, Medium, High (Multi-Class Classification)
+3. A numerical value of quality. (Regression)
+4. A ranking of the review quality among other reviews. (Ordinal Regression, Classification)
+
+All of these targets have positives and negatives. The focus here is on option 1 since it is the easiest to understand and avoids some of the time discounting pitfalls.
 
 ## Metadata Feature Engineering
 
@@ -125,13 +138,13 @@ Features added include:
 * Counts
     * User Friends Count
     * User Elite Award Count
-    * Restaurant Check-in Count
+    * Business Check-in Count
 * Time Based
     * User Years Since Last Elite Award
     * User Days Active at Review Time
 * Composites
     * Review Stars vs. User Average
-    * Review Stars vs. Restaurant Average
+    * Review Stars vs. Business Average
 
 ## NLP Feature Engineering
 
@@ -223,14 +236,10 @@ Knowing that the quality of reviews can be predicted, as well as which pieces of
 # Next Steps
 
 Improve the ability to predict review quality by:
-* Exploring the data more thoroughly (EDA).
-* Streamlining the data storage and cleaning pipeline.
-* Utilizing NLP to explore the text of the reviews.
-* Collecting current data via the Yelp API.
-* Adjusting data for changes over time.
+* Diving deeper into the review text using more NLP tools.
+* Improve time discounting adjustments.
 * Scaling up the capacity for data analysis by utilizing AWS and Apache Spark.
 * Testing new machine learning models including XG Boost and Neural Networks.
-* Creating a machine learning model testing framework for tuning models and cataloging results.
 * Creating custom cost functions that better represent the overall goal.    
 
 <br/><br/>

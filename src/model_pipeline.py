@@ -174,7 +174,7 @@ class ModelPipeline():
         nan_count = sum(df.isna().sum())
         if nan_count > 0:
             df = df.dropna()
-            print('This data has nans. They are being dropped.')
+            print(f'This data has {nan_count} nans. They are being dropped.')
         self.model_details.working_record['question'] = question
         self.model_details.working_record['record_count'] = len(df.index)
         self.data = df
