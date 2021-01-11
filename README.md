@@ -45,6 +45,8 @@ The goal of this project is to explore a way to increase user retention, satisfa
 ### 1. Can the quality of a review be determined by the review text or the data surrounding the review?
 ### 2. What types of data are most useful for predicting review quality?
 
+### Why Quality Reviews Are Important
+
 ![Why Quality Reviews Are Important](images/quality_reviews.png)
 
 ## The Data
