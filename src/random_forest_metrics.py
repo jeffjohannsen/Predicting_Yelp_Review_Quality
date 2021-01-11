@@ -424,7 +424,7 @@ def plot_feature_importances(
                                Defaults to False.
     """
     tree_importance_sorted_idx = np.argsort(forest.feature_importances_)[::-1]
-    y_data_fi = np.arange(len(X_train.columns))[:num]
+    y_data_fi = np.arange(len(X_train.columns), -1, -1)[:num]
     x_data_fi = forest.feature_importances_[tree_importance_sorted_idx][:num]
     if alt_labels is not None:
         fi_labels = [
@@ -597,7 +597,7 @@ if __name__ == "__main__":
             filename=f"feat_imp{filename_suffix}",
             alt_labels=alt_names,
         )
-        # exit()
+        exit()
         plot_permutation_importances(
             fitted_forest,
             X_train,
