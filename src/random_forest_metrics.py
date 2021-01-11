@@ -15,6 +15,7 @@ from sklearn.inspection import permutation_importance
 from sklearn.metrics import (accuracy_score, precision_score,
                              recall_score, f1_score, confusion_matrix)
 from model_pipeline import ModelPipeline
+from model_setup import ModelSetupInfo
 
 
 
@@ -51,7 +52,7 @@ def autolabel(rects, axe, xpos='center'):
     for rect in rects:
         height = rect.get_height()
         axe.text(rect.get_x() + rect.get_width()*offset[xpos], 1.01*height,
-                 '{}%'.format(height), ha=ha[xpos], va='bottom', fontsize=28,
+                 '{}%'.format(height), ha=ha[xpos], va='bottom', fontsize=32,
                  weight='bold', fontname='Arial')
 
 
@@ -113,11 +114,11 @@ def bar_color_chooser(x):
     """
     if x.startswith('User'):
         return 'tab:red'
-    elif x.startswith('Business'):
-        return 'tab:gray'
     elif x.startswith('Review Text'):
-        return 'tab:orange'
+        return 'tab:gray'
     elif x.startswith('Review'):
+        return 'tab:orange'
+    elif x.startswith('Business'):
         return 'tab:blue'
     else:
         return 'tab:purple'
@@ -197,6 +198,16 @@ def plot_model_performance(results, metrics, save=False,
     ax2.set_xticklabels(performance_metrics_labels, rotation=45,
                         ha="right", fontweight='bold')
     autolabel(rects2, ax2, "center")
+    
+    for ax in [ax1, ax2]:
+        ax.get_yaxis().set_ticks([])
+        ax.grid(False)
+        ax.set_facecolor('w')
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
+        
     fig.tight_layout()
     if save:
         plt.savefig(f'../images/{filename}.png', dpi=300, bbox_inches='tight')
@@ -224,7 +235,7 @@ def plot_model_performance_vs_baseline(results, accuracy,
         save (bool, optional): Whether or not to save the plots to file.
                                 Defaults to False.
     """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 9))
+    fig, (ax2, ax1) = plt.subplots(1, 2, figsize=(16, 9))
     # Data
     x_data_ax1 = np.arange(4)
     x_data_ax2 = np.arange(2)
@@ -238,36 +249,48 @@ def plot_model_performance_vs_baseline(results, accuracy,
     rects1 = ax1.bar(x_data_ax1, y_data_ax1, color=bar_colors_ax1,
                      edgecolor='dimgrey', linewidth=1)
     # ax1.set_title("Model Results", fontweight="bold")
-    ax1.set_ylabel("Percent of Model Predictions", labelpad=20, fontsize=28,
-                   fontweight='bold', fontname='Arial')
-    ax1.set_ylim(0, 105)
+    # ax1.set_ylabel("Percent of Model Predictions", labelpad=20, fontsize=32,
+    #                fontweight='normal', fontname='Arial')
+    # ax1.set_ylim(0, 50)
     ax1.set_xticks(x_data_ax1)
     ax1.set_xticklabels(model_results_labels, rotation=45,
                         ha="right", fontweight='normal')
     ax1.axhline(y=0, color='dimgrey')
     autolabel(rects1, ax1, "center")
     # Plotting performance metrics
-    bar_colors_ax2 = ['tab:blue', '#FF5D5D']
+    bar_colors_ax2 = ['tab:blue', 'tab:gray']
     rects2 = ax2.bar(x_data_ax2, y_data_ax2, color=bar_colors_ax2,
                      edgecolor='dimgrey', linewidth=1)
     # ax2.set_title("Prediction Accuracy", fontweight="bold")
-    ax2.set_ylim(0, 105)
+    # ax2.set_ylim(0, 100)
     ax2.set_xticks(x_data_ax2)
-    ax2.set_xticklabels(['Model Accuracy', 'Baseline Accuracy'], rotation=0,
+    ax2.set_xticklabels(['Model\nAccuracy', 'Baseline\nAccuracy'], rotation=0,
                         ha="center", fontweight='normal')
     ax2.axhline(y=0, color='dimgrey')
 
-    fig.suptitle('Model Prediction Results', fontsize=40,
-                 fontweight='normal', fontname='Arial')
+    fig.suptitle('Model Prediction Results', fontsize=48,
+                 fontweight='normal', fontname='Arial',
+                 ha='left', x=0.04, y=0.9)
+
+    for ax in [ax1, ax2]:
+        ax.get_yaxis().set_ticks([])
+        ax.grid(False)
+        ax.set_facecolor('w')
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
 
     for rect in rects2:
         height = rect.get_height()
         ax2.text(rect.get_x() + rect.get_width()*0.5, 1.01*height,
-                 f'{round(height)}%', ha='center', va='bottom', fontsize=28,
+                 f'{round(height)}%', ha='center', va='bottom', fontsize=32,
                  weight='bold', fontname='Arial')
     fig.tight_layout()
+    plt.subplots_adjust(top=0.75)
     if save:
-        plt.savefig(f'../images/{filename}.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'../images/{filename}.png', dpi=300,
+                    bbox_inches=None, transparent=True)
         plt.close()
     else:
         plt.show()
@@ -328,36 +351,45 @@ def plot_feature_importances(forest, X_train, num=20, alt_labels=None, save=Fals
                                Defaults to False.
     """
     tree_importance_sorted_idx = np.argsort(forest.feature_importances_)[::-1]
-    x_data_fi = np.arange(len(X_train.columns))[:num]
-    y_data_fi = forest.feature_importances_[tree_importance_sorted_idx][:num]
+    y_data_fi = np.arange(len(X_train.columns))[:num]
+    x_data_fi = forest.feature_importances_[tree_importance_sorted_idx][:num]
     if alt_labels is not None:
         fi_labels = [alt_labels[feature] for
                      feature in X_train.columns[tree_importance_sorted_idx]][:num]
     else:
         fi_labels = [feature.replace('_', ' ').title() for
                      feature in X_train.columns[tree_importance_sorted_idx]][:num]
+    fi_labels_clr = [feature.replace('_', ' ').title() for
+                     feature in X_train.columns[tree_importance_sorted_idx]][:num]
     fig, ax = plt.subplots(figsize=(16, 9))
-    bar_colors_fi = list(map(bar_color_chooser, fi_labels))
-    ax.bar(x_data_fi, y_data_fi, color=bar_colors_fi)
-    ax.set_title("Feature Importances", fontsize=40,
-                 fontweight='normal', fontname='Arial')
-    ax.set_ylabel("Importance Score", fontsize=28,
-                  fontweight='bold', fontname='Arial')
-    ax.set_xticks(x_data_fi)
-    ax.set_xticklabels(fi_labels, rotation=45, ha="right",
+    bar_colors_fi = list(map(bar_color_chooser, fi_labels_clr))
+    ax.barh(y_data_fi, x_data_fi, color=bar_colors_fi,
+            edgecolor='dimgrey', linewidth=1)
+    fig.suptitle('Important Features', fontsize=48,
+                 fontweight='normal', fontname='Arial',
+                 ha='left', x=0.04, y=0.9)
+    ax.set_xlabel("Importance Score", fontsize=32, labelpad=20,
+                  fontweight='normal', fontname='Arial')
+    ax.set_yticks(y_data_fi)
+    ax.set_yticklabels(fi_labels, rotation=0,
                        fontweight='normal')
+    ax.axvline(x=0, color='dimgrey')
+    ax.grid(False)
+    ax.set_facecolor('w')
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
     legend_elements = [Line2D([0], [0], color='tab:red', lw=20,
                               label='User Data'),
                        Line2D([0], [0], color='tab:gray', lw=20,
-                              label='Business Data'),
-                       Line2D([0], [0], color='tab:blue', lw=20,
-                              label='Review MetaData'),
-                       Line2D([0], [0], color='tab:orange', lw=20,
                               label='Review Text Data')]
     ax.legend(handles=legend_elements)
     fig.tight_layout()
+    plt.subplots_adjust(top=0.80)
     if save:
-        plt.savefig(f'../images/{filename}.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'../images/{filename}.png', dpi=300,
+                    bbox_inches=None, transparent=True)
         plt.close()
     else:
         plt.show()
@@ -399,7 +431,9 @@ if __name__ == "__main__":
     pd.set_option('display.float_format', lambda x: '%.5f' % x)
     pd.options.mode.use_inf_as_na = True
     plt.style.use('fivethirtyeight')
-    plt.rcParams.update({'font.size': 24, 'font.family': 'Arial'})
+    plt.rcParams.update({'font.size': 28, 'font.family': 'Arial'})
+
+    alt_names = ModelSetupInfo().feature_names
 
     for datatype in ['both']:
         record_count = 10000
@@ -437,8 +471,9 @@ if __name__ == "__main__":
                                            test_data_baseline_percent,
                                            save=True,
                                            filename=f'model_perf_rec{filename_suffix}')
-        plot_feature_importances(fitted_forest, X_train, save=True, num=7,
-                                 filename=f'feat_imp{filename_suffix}')
+        plot_feature_importances(fitted_forest, X_train, save=True, num=5,
+                                 filename=f'feat_imp{filename_suffix}',
+                                 alt_labels=alt_names)
         exit()
         plot_permutation_importances(fitted_forest, X_train, y_train,
                                      save=True, filename=f'per_imp{filename_suffix}')
