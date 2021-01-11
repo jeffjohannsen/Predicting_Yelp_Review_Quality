@@ -1,5 +1,0 @@
-.ipynb_checkpoints
-*.json
-data/full_data/**
-private_docs
-*.pyc
