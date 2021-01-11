@@ -8,6 +8,7 @@
     * [Goal and Central Questions](#Goal-and-Central-Questions)
     * [The Data](#The-Data)
 * [Data Storage](#Data-Storage)
+* [EDA](#EDA)
 * [Data Pipeline](#Data-Pipeline)
     * [Data Cleaning](#Data-Cleaning)
     * [Time Discounting](#Time-Discounting)
@@ -16,7 +17,7 @@
     * [NLP Feature Engineering](#NLP-Feature-Engineering)
 * [Data Modeling](#Data-Modeling)
     * [Model Setup](#Model-Setup)
-    * [Model Results](Model-Results)
+    * [Model Results](#Model-Results)
 * [Conclusions](#Conclusions)
 * [Next Steps](#Next-Steps)
 * [Photo and Data Credits](#Photo-and-Data-Credits)
@@ -38,11 +39,13 @@ Working with and better understanding the data available to these companies will
 
 ## Goal and Central Questions
 
-The goal of my project is to explore a way to increase user retention, satisfaction, and engagement for Yelp and other companies that incorporate reviews into their platforms. This will be accomplished by predicting the highest quality reviews given knowledge gained from the review text and the data surrounding the reviews.
+The goal of this project is to explore a way to increase user retention, satisfaction, and engagement for Yelp and any other company that incorporates reviews within its platform. These improvements will be accomplished by predicting the highest quality reviews via information gained from the review text and data surrounding the reviews.
 
 ### Central Questions
 ### 1. Can the quality of a review be determined by the review text or the data surrounding the review?
 ### 2. What types of data are most useful for predicting review quality?
+
+![Why Quality Reviews Are Important](images/quality_reviews.png)
 
 ## The Data
 
@@ -73,15 +76,23 @@ This dataset consists of 5 separate json files totaling ~10GB of data uncompress
 * **Tips**- ~1.3 million rows with 5 features
     * Kind of like a really short review without as much useful metadata.
 
+![Data Categories](images/dataset_categories.png)
+
 <br/><br/>
 
 # Data Storage
 
-My original data came in 5 json files. The first step was to simplify, combine, and store these files in a way that would be easily searchable for future data analysis, cleaning, and feature engineering. Using the tools below I converted the original json files into a Postgres database table that could be easily accessed using Pandas.
+My original data came in 5 json files. The first step was to simplify, combine, and store these files in a way that would be easily searchable for future data analysis, cleaning, and feature engineering.
 
-![Data Storage Process](images/data_storage_process.png)
+I worked in MongoDB for a little bit but ended up going the SQL route due to only having a subset of the data. If I was dealing with all of the data like Yelp is, it would be reasonable to make more use of NoSQL databases like MongoDB.
+
+This database will eventually be stored on AWS for easier access when scaling up the prediction process.
+
+![Data Storage Process](images/data_storage_flow.png)
 
 ## Original Working Dataset
+
+Below is a brief look at the original data after I ran it through my data storage process.
 
 |    | review_id              | user_id                | business_id            |   review_stars | review_date         | review_text                  |   review_useful |   review_funny |   review_cool | restaurant_name              | restaurant_address           | restaurant_city   | restaurant_state   | restaurant_postal_code   |   restaurant_latitude |   restaurant_longitude |   restaurant_overall_stars |   restaurant_review_count |   restaurant_is_open | restaurant_categories        |   restaurant_price_range | user_name   |   user_review_count | user_yelping_since   |   user_useful |   user_funny |   user_cool | user_elite               | user_friends                 |   user_fans |   user_average_stars_given |   user_compliment_hot |   user_compliment_more |   user_compliment_profile |   user_compliment_cute |   user_compliment_list |   user_compliment_note |   user_compliment_plain |   user_compliment_cool |   user_compliment_funny |   user_compliment_writer |   user_compliment_photos | restaurant_checkins          |
 |---:|:-----------------------|:-----------------------|:-----------------------|---------------:|:--------------------|:-----------------------------|----------------:|---------------:|--------------:|:-----------------------------|:-----------------------------|:------------------|:-------------------|:-------------------------|----------------------:|-----------------------:|---------------------------:|--------------------------:|---------------------:|:-----------------------------|-------------------------:|:------------|--------------------:|:---------------------|--------------:|-------------:|------------:|:-------------------------|:-----------------------------|------------:|---------------------------:|----------------------:|-----------------------:|--------------------------:|-----------------------:|-----------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|-------------------------:|-------------------------:|:-----------------------------|
@@ -93,11 +104,22 @@ My original data came in 5 json files. The first step was to simplify, combine, 
 
 <br/><br/>
 
+# EDA
+
+In order to determine the quality of a review I took the sum of the useful, funny, and cool votes that the review has received.
+Looking at the distribution of votes per review you can see that about half of all reviews receive no votes at all.
+Another sizable portion of reviews receive between 1 and 5 votes.
+Very few reviews make it over 10 votes.
+
+![Votes Per Review](images/eda_num_reviews_per_vote_count_1.png)
+
+<br/><br/>
+
 # Data Pipeline
 
 The original working data was not going to be very usable for analysis and machine learning model training so I created a pipeline that would clean and organize the data as well as add features that could be informative.
 
-![Pipeline](images/pipeline_icon.png)
+![Pipeline](images/data_pipeline.png)
 
 ## Data Cleaning
 
@@ -116,7 +138,11 @@ The main data cleaning steps included:
 
 When trying to use the data to answer the questions I wanted to answer, the passage of time creates an issue that must be addressed. 
 A lot of the datapoints are counts that were saved at the time the dataset was made public in 2020.
-These datapoints increase over time so if we want to use them to predict a review at the time it was created, these datapoints need to be adjusted to represent what they would have been at the time of the review.   
+These datapoints increase over time so if we want to use them to predict a review at the time it was created, these datapoints need to be adjusted to represent what they would have been at the time of the review. 
+There are three major places where time discounting came into importance:
+1. Target Creation - More recent reviews have less time to accumulate votes. This needs to be adjusted for otherwise older reviews will always seem more useful.
+2. Feature Engineering - 
+3.   
 
 ## Target Creation
 
@@ -130,6 +156,11 @@ Options:
 All of these targets have positives and negatives. The focus here is on option 1 since it is the easiest to understand and avoids some of the time discounting pitfalls.
 
 ## Metadata Feature Engineering
+
+![Non-NLP Feature Engineering](images/non_nlp_feature_engineering.png)
+
+To try and make it easier to determine if a review is quality, I created new features about the data based off of the interactions between current data features as well as changes in time.
+For example, knowing the star rating of a review might be useful but it is probably more useful to know how much more or less that star rating is than the average rating.
 
 Features added include:
 * Sums
@@ -148,17 +179,35 @@ Features added include:
 
 ## NLP Feature Engineering
 
+The most important part of determining the quality of a review is understanding the actual text of the review. To do this I created new data features using Natural Language Processing.
+
+NLP features added include:
+* Basic Text Features
+    * Review Length, Word Count, etc.
+* Readability 
+    * Flesch–Kincaid Grade Level
+* Parts of Speech
+    * Noun, Verb, Adjective, etc. 
+* Syntactic Dependency Relations 
+    * Sentence Structure
+* Named Entities
+    * Person, Place, Event, etc.
+* ML Model Predictions
+    * SVM and Naive Bayes using TF-IDF
+
 <br/><br/>
 
 # Data Modeling
 
 ## Model Setup
 
+Multiple models were tested and the hyperparameters were tuned using cross validation. For now a random forest is the best performing model.
+
 ### Model Choice: Random Forest Classifier
 
 Why?
 1. Easy to setup and work with.
-2. Allowed me to be reasonably confident with the validity of my process and results.
+2. Good results
 3. Provided quick feedback on whether the questions were worth pursuing or not.
 
 ### Binary Classification 
@@ -169,8 +218,8 @@ Two Options:
 
 ### Class Balance
 * The classes are very close to equal.
-* 49% of reviews are quality.
-* 51% of reviews are not quality. 
+* 48% of reviews are quality.
+* 52% of reviews are not quality. 
 
 ### Model Performance Metrics and Decision Threshold
 
@@ -191,11 +240,7 @@ Later - Precision and Accuracy
 ## Model Results
 
 ## Central Question 1:
-## Can the quality of a review be determined by data surrounding the review?
-
-Tested a lot of different hyperparameters but couldn't get the test accuracy to move very much beyond what was provided by the default values.  
-My changes only really moved the training accuracy.  
-The best performing model was created using: 100000 records, 100 trees, unrestricted depth and leaf nodes.   
+## Can the quality of a review be determined by data surrounding the review?  
 
 <img src="images/model_results.png" alt="Model Results" width="1000" height="600"/>
 
@@ -203,11 +248,6 @@ The best performing model was created using: 100000 records, 100 trees, unrestri
 
 ## Central Question 2:
 ## What types of data are most useful for predicting review quality?
-
-The data being used for prediction falls into three categories:
-* Data surrounding the review.
-* Data about the user that created the review.
-* Data about the restaurant being reviewed.
 
 The typical way to answer this sort of question with a random forest is using feature importance.
 
@@ -219,17 +259,19 @@ Permutation importance can be used to correct for this.
 <img src="images/permutation_importances.png" alt="Permutation Importances" width="900" height="600"/>
 
 Permutation importance can be inaccurate when there is high correlation between features.  
-Hierarchical clustering of Spearman rank-order correlations can be used to remove correlated features.  
-Unfortunately, this reduced my accuracy from ~71% to ~65%.  
+Hierarchical clustering of Spearman rank-order correlations can be used to remove correlated features.
+
+<img src="images/.png" alt="Feature Correlations" width="900" height="600"/>
+
+After decreasing the influence the correlated features, the new feature and permutation importances can be calculated. Unfortunately this decreases the overall prediction accuracy by X%.
 
 <br/><br/>
 
 # Conclusions
-### 1. The quality of reviews can be determined by the data surrounding the review with an accuracy better than chance.
-### 2. Data about the users is the most important to consider when predicting the quality of a review. (Of data types reviewed)
-### 3. More analysis needs to be completed to improve prediction results.
+### 1. The quality of reviews can be determined with an accuracy better than chance.
+### 2. Data about the review text and the user creating the review are the most important to consider when predicting the quality of a review.
 
-Knowing that the quality of reviews can be predicted, as well as which pieces of data are the most important for these predictions is a stepping stone for helping Yelp and similar companies to better surface reviews that improve user retention, engagement and satisfaction. Unfortunately, at this time the magnitude of this knowledge is not large enough to encourage significant action, though this will be improved upon in the near future.  
+Knowing that the quality of reviews can be predicted, as well as which pieces of data are the most important for these predictions is a stepping stone for helping Yelp and similar companies to better surface reviews that improve user retention, engagement and satisfaction. I was only able to scratch the surface of learning about the review text using NLP. Diving deeper in this area is my next goal. Combining NLP with big data tools like AWS and Spark will allow me to improve my understanding of the reviews and improve my model’s predictions in the future.   
 
 <br/><br/>
 

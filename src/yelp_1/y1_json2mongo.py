@@ -1,5 +1,5 @@
-from pymongo import MongoClient
 import pprint
+from pymongo import MongoClient
 
 
 def access_specific_collection(collection_name):
@@ -12,15 +12,20 @@ def access_specific_collection(collection_name):
     Returns:
         object: Collection
     """
-    client = MongoClient('localhost', 27017)
+    client = MongoClient("localhost", 27017)
     db = client.yelp
     business = db.business
     review = db.review
     tip = db.tip
     checkin = db.checkin
     user = db.user
-    collections = {'business': business, 'review': review,
-                   'tip': tip, 'checkin': checkin, 'user': user}
+    collections = {
+        "business": business,
+        "review": review,
+        "tip": tip,
+        "checkin": checkin,
+        "user": user,
+    }
     return collections[collection_name]
 
 
@@ -31,7 +36,7 @@ def access_all_collections():
     Returns:
         Tuple of Objects: The five collections from the "yelp" database.
     """
-    client = MongoClient('localhost', 27017)
+    client = MongoClient("localhost", 27017)
     db = client.yelp
     business = db.business
     review = db.review
@@ -46,13 +51,15 @@ def record_counts_examples():
     Prints the record counts and example record of each collection
     in order to explore record structure.
     """
-    print('\nRecord Counts:')
+    print("\nRecord Counts:")
     for collection in access_all_collections():
-        print(f'{collection.name} records: {collection.estimated_document_count()}')
+        print(
+            f"{collection.name} records: {collection.estimated_document_count()}"
+        )
 
-    print('\nExample Records:')
+    print("\nExample Records:")
     for collection in access_all_collections():
-        print(f'\n{collection.name}\n------------------------------')
+        print(f"\n{collection.name}\n------------------------------")
         pprint.pprint(collection.find_one())
 
 
