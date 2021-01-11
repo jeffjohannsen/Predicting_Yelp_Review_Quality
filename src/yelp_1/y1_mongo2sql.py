@@ -1,17 +1,16 @@
-
 # ! WARNING: Memory overload issues very possible. Be careful.
 # TODO: Simplify and condense functions.
 # Deprecated code. Use new json2sql.py setup.
 # Current version bypasses MongoDB.
 # This is starter code for returning to MongoDB if necessary.
 
-import json
-from pymongo import MongoClient
+
 import numpy as np
 import pandas as pd
-from pymongo import collection
-from old_json2mongo import access_specific_collection
+from pymongo import MongoClient, collection
 from sqlalchemy import create_engine
+
+from y1_json2mongo import access_specific_collection
 
 
 def batched(cursor, batch_size):
@@ -34,7 +33,7 @@ def batched(cursor, batch_size):
             yield batch
             batch = []
 
-    if batch:   # last documents
+    if batch:  # last documents
         yield batch
 
 
@@ -52,7 +51,7 @@ def load_data_from_mongo(collection_name):
     """
     collection = access_specific_collection(collection_name)
     data = list(collection.find({}))
-    df = pd.json_normalize(data, errors='ignore')
+    df = pd.json_normalize(data, errors="ignore")
     print(df.head(5))
     return df
 
@@ -92,16 +91,16 @@ def trim_columns(df, columns_to_keep):
     Returns:
         Dataframe: Original dataframe minus columns not kept.
     """
-    print('\nBefore:\n------------------')
+    print("\nBefore:\n------------------")
     print(df.info())
     new_df = df.copy()
     new_df = new_df.loc[:, columns_to_keep]
-    print('\nAfter:\n------------------')
+    print("\nAfter:\n------------------")
     print(new_df.info())
     return new_df
 
 
-def save_to_postgres(df, db, table, action='replace', chunksize=5000):
+def save_to_postgres(df, db, table, action="replace", chunksize=5000):
     """
     Saves a dataframe to a database on postgres.
 
@@ -113,11 +112,12 @@ def save_to_postgres(df, db, table, action='replace', chunksize=5000):
                          Options: replace (Default), append, or fail.
         chunksize (int): Number of rows to save at a time. Default 5000.
     """
-    connect = f'postgresql+psycopg2://postgres:password@localhost:5432/{db}'
+    connect = f"postgresql+psycopg2://postgres:password@localhost:5432/{db}"
     engine = create_engine(connect)
-    df.to_sql(table, con=engine, index=False,
-              if_exists=action, chunksize=chunksize)
-    print('Save to Postgres Successful')
+    df.to_sql(
+        table, con=engine, index=False, if_exists=action, chunksize=chunksize
+    )
+    print("Save to Postgres Successful")
 
 
 def load_data_from_json(filepath):
@@ -145,9 +145,9 @@ def convert_business_data(columns):
         columns (list): Columns of collection to transfer
                         to table.
     """
-    df = load_data_from_mongo('business')
+    df = load_data_from_mongo("business")
     df = trim_columns(df, columns)
-    save_to_postgres(df, 'business')
+    save_to_postgres(df, "business")
 
 
 def convert_checkin_data(columns):
@@ -159,9 +159,9 @@ def convert_checkin_data(columns):
         columns (list): Columns of collection to transfer
                         to table.
     """
-    df = load_data_from_mongo('checkin')
+    df = load_data_from_mongo("checkin")
     df = trim_columns(df, columns)
-    save_to_postgres(df, 'checkin')
+    save_to_postgres(df, "checkin")
 
 
 # # Overloads memory on inbound and outbound.
@@ -175,9 +175,9 @@ def convert_user_data(columns):
         columns (list): Columns of collection to transfer
                         to table.
     """
-    df = load_data_from_mongo_in_batches('user', 5000)
+    df = load_data_from_mongo_in_batches("user", 5000)
     df = trim_columns(df, columns)
-    save_to_postgres(df, 'user')
+    save_to_postgres(df, "user")
 
 
 # Overloads memory even with batch setup.
@@ -194,31 +194,66 @@ def convert_review_data(files, columns):
     """
     file_num = 0
     for file in files:
-        filepath = f'../data/full_data/{file}'
+        filepath = f"../data/full_data/{file}"
         chunk = load_data_from_json(filepath)
         chunk = trim_columns(chunk, columns)
-        save_to_postgres(chunk, 'review', action='append', chunksize=100000)
+        save_to_postgres(chunk, "review", action="append", chunksize=100000)
         file_num += 1
-        print(f'{file} saved to Postgres. {file_num} of {len(files)}')
+        print(f"{file} saved to Postgres. {file_num} of {len(files)}")
 
 
 if __name__ == "__main__":
-    columns_to_keep_business = ['business_id', 'name', 'address',
-                                'city', 'state', 'postal_code',
-                                'latitude', 'longitude', 'stars',
-                                'review_count', 'is_open', 'categories',
-                                'attributes.RestaurantsPriceRange2']
-    columns_to_keep_checkin = ['business_id', 'date']
-    columns_to_keep_review = ['review_id', 'user_id', 'business_id', 'stars',
-                              'date', 'text', 'useful', 'funny', 'cool']
-    columns_to_keep_user = ['user_id', 'name', 'review_count', 'yelping_since',
-                            'useful', 'funny', 'cool', 'elite', 'friends',
-                            'fans', 'average_stars', 'compliment_hot',
-                            'compliment_more', 'compliment_profile',
-                            'compliment_cute', 'compliment_list',
-                            'compliment_note', 'compliment_plain',
-                            'compliment_cool', 'compliment_funny',
-                            'compliment_writer', 'compliment_photos']
+    columns_to_keep_business = [
+        "business_id",
+        "name",
+        "address",
+        "city",
+        "state",
+        "postal_code",
+        "latitude",
+        "longitude",
+        "stars",
+        "review_count",
+        "is_open",
+        "categories",
+        "attributes.RestaurantsPriceRange2",
+    ]
+    columns_to_keep_checkin = ["business_id", "date"]
+    columns_to_keep_review = [
+        "review_id",
+        "user_id",
+        "business_id",
+        "stars",
+        "date",
+        "text",
+        "useful",
+        "funny",
+        "cool",
+    ]
+    columns_to_keep_user = [
+        "user_id",
+        "name",
+        "review_count",
+        "yelping_since",
+        "useful",
+        "funny",
+        "cool",
+        "elite",
+        "friends",
+        "fans",
+        "average_stars",
+        "compliment_hot",
+        "compliment_more",
+        "compliment_profile",
+        "compliment_cute",
+        "compliment_list",
+        "compliment_note",
+        "compliment_plain",
+        "compliment_cool",
+        "compliment_funny",
+        "compliment_writer",
+        "compliment_photos",
+    ]
 
     # Split review json file in command line.
     review_file_list = []
