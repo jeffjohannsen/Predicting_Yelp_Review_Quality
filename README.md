@@ -59,7 +59,7 @@ The data for this project comes from the Yelp Open Dataset.
 ### About Yelp 
 > ### *<div align="center">"Yelp connects people with great local businesses. With unmatched local business information, photos and review content, Yelp provides a one-stop local platform for consumers to discover, connect and transact with local businesses of all sizes by making it easy to request a quote, join a waitlist, and make a reservation, appointment or purchase. Yelp was founded in San Francisco in 2004."</div>*
 
-[Yelp News](https://www.yelp-press.com/news/default.aspx), [Fast Facts and Stats](https://www.yelp-press.com/company/fast-facts/default.aspx) <--- Say that 10 times fast.
+[Yelp News](https://www.yelp-press.com/news/default.aspx), [Fast Facts and Stats](https://www.yelp-press.com/company/fast-facts/default.aspx)
 
 ### About the Data 
 
@@ -141,10 +141,9 @@ The main data cleaning steps included:
 When trying to use the data to answer the questions I wanted to answer, the passage of time creates an issue that must be addressed. 
 A lot of the datapoints are counts that were saved at the time the dataset was made public in 2020.
 These datapoints increase over time so if we want to use them to predict a review at the time it was created, these datapoints need to be adjusted to represent what they would have been at the time of the review. 
-There are three major places where time discounting came into importance:
+There are two major places where time discounting came into importance:
 1. Target Creation - More recent reviews have less time to accumulate votes. This needs to be adjusted for otherwise older reviews will always seem more useful.
-2. Feature Engineering - 
-3.   
+2. Feature Engineering - Utilize actual or estimated counts at the time of the review instead of at the time the dataset was released.
 
 ## Target Creation
 
@@ -244,28 +243,20 @@ Later - Precision and Accuracy
 ## Central Question 1:
 ## Can the quality of a review be determined by data surrounding the review?  
 
-<img src="images/model_results.png" alt="Model Results" width="1000" height="600"/>
+After running the random forest I got a prediction accuracy of 73%. This is an improvement over predicting the majority class which is 52% accurate as well as random chance which is 50%.
+
+<img src="images/model_perf_rec_both_1000k_2021-01-12_01-35-21.png" alt="Model Results" width="1000" height="600"/>
 
 ## Feature Importance
 
 ## Central Question 2:
 ## What types of data are most useful for predicting review quality?
 
-The typical way to answer this sort of question with a random forest is using feature importance.
+The typical way to answer this sort of question with a random forest is using feature importance. This graph shows the data that was most important for making predictions. Unsurprisingly, the text of the review and the data about the user creating the review are the most useful.
 
-<img src="images/feature_importances.png" alt="Feature Importances" width="900" height="600"/>
+<img src="images/feat_imp_both_100k_2021-01-11_23-31-11.png" alt="Feature Importances" width="900" height="600"/>
 
-Basic feature importance may not be able to be used due to high cardinality of a lot of the features. (Large number of possible values for a lot of the numeric features.)   
-Permutation importance can be used to correct for this.  
-
-<img src="images/permutation_importances.png" alt="Permutation Importances" width="900" height="600"/>
-
-Permutation importance can be inaccurate when there is high correlation between features.  
-Hierarchical clustering of Spearman rank-order correlations can be used to remove correlated features.
-
-<img src="images/.png" alt="Feature Correlations" width="900" height="600"/>
-
-After decreasing the influence the correlated features, the new feature and permutation importances can be calculated. Unfortunately this decreases the overall prediction accuracy by X%.
+This graph shows the data that was most important for making predictions. Unsurprisingly, the text of the review and the data about the user creating the review are the most useful.
 
 <br/><br/>
 

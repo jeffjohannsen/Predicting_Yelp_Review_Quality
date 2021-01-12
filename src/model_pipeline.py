@@ -744,7 +744,7 @@ class ModelPipeline:
         print(f"Prepped Data in {(ft - st):.4f} seconds")
         st = time.perf_counter()
         self.add_nlp_features(
-            show_model_results=print_results, use_cv=use_cv, feature_level=3
+            show_model_results=print_results, use_cv=use_cv, feature_level=4
         )
         ft = time.perf_counter()
         print(f"Added NLP Features in {((ft - st) / 60):.4f} minutes")

@@ -533,7 +533,7 @@ if __name__ == "__main__":
 
     alt_names = ModelSetupInfo().feature_names
 
-    for datatype in ["both"]:
+    for datatype in ["both", "text", "non_text"]:
         record_count = 10000
         pipeline = ModelPipeline(False)
         (
@@ -561,8 +561,8 @@ if __name__ == "__main__":
             f"_{datatype}_{round(record_count / 1000)}k_{model_finish_time}"
         )
 
-        for col in X_train.columns:
-            print(f"'{col}': '{col}',")
+        # for col in X_train.columns:
+        #     print(f"'{col}': '{col}',")
 
         print("Training Data:")
         print_data_info(y_train, X_train)
@@ -597,60 +597,60 @@ if __name__ == "__main__":
             filename=f"feat_imp{filename_suffix}",
             alt_labels=alt_names,
         )
-        exit()
-        plot_permutation_importances(
-            fitted_forest,
-            X_train,
-            y_train,
-            save=True,
-            filename=f"per_imp{filename_suffix}",
-        )
-        corr_linkage = plot_feature_correlation(
-            X_train, save=True, filename=f"feat_corr{filename_suffix}"
-        )
+        # plot_permutation_importances(
+        #     fitted_forest,
+        #     X_train,
+        #     y_train,
+        #     save=True,
+        #     filename=f"per_imp{filename_suffix}",
+        # )
+        # corr_linkage = plot_feature_correlation(
+        #     X_train, save=True, filename=f"feat_corr{filename_suffix}"
+        # )
 
-        cluster_ids = hierarchy.fcluster(corr_linkage, 2, criterion="distance")
-        cluster_id_to_feature_ids = defaultdict(list)
-        for idx, cluster_id in enumerate(cluster_ids):
-            cluster_id_to_feature_ids[cluster_id].append(idx)
-        selected_features = [v[0] for v in cluster_id_to_feature_ids.values()]
+        # cluster_ids = hierarchy.fcluster(corr_linkage, 2, criterion="distance")
+        # cluster_id_to_feature_ids = defaultdict(list)
+        # for idx, cluster_id in enumerate(cluster_ids):
+        #     cluster_id_to_feature_ids[cluster_id].append(idx)
+        # selected_features = [v[0] for v in cluster_id_to_feature_ids.values()]
 
-        X_train_sel = X_train.iloc[:, selected_features]
-        X_test_sel = X_test.iloc[:, selected_features]
+        # X_train_sel = X_train.iloc[:, selected_features]
+        # X_test_sel = X_test.iloc[:, selected_features]
 
-        clf_sel = RandomForestClassifier(n_estimators=100, random_state=7)
-        clf_sel.fit(X_train_sel, y_train)
+        # clf_sel = RandomForestClassifier(n_estimators=100, random_state=7)
+        # clf_sel.fit(X_train_sel, y_train)
 
-        (
-            results,
-            results_labels,
-            metrics,
-            metrics_labels,
-        ) = create_model_performance_metrics(
-            clf_sel, X_train_sel, X_test_sel, y_train, y_test
-        )
-        plot_model_performance_vs_baseline(
-            results,
-            metrics[0],
-            test_data_baseline_percent,
-            save=True,
-            filename=f"model_perf_rec{filename_suffix}_b",
-        )
-        plot_feature_importances(
-            clf_sel,
-            X_train_sel,
-            num=10,
-            save=True,
-            filename=f"feat_imp{filename_suffix}_b",
-        )
-        plot_permutation_importances(
-            clf_sel,
-            X_train_sel,
-            y_train,
-            num=10,
-            save=True,
-            filename=f"per_imp{filename_suffix}_b",
-        )
-        corr_linkage = plot_feature_correlation(
-            X_train_sel, save=True, filename=f"feat_corr{filename_suffix}_b"
-        )
+        # (
+        #     results,
+        #     results_labels,
+        #     metrics,
+        #     metrics_labels,
+        # ) = create_model_performance_metrics(
+        #     clf_sel, X_train_sel, X_test_sel, y_train, y_test
+        # )
+        # plot_model_performance_vs_baseline(
+        #     results,
+        #     metrics[0],
+        #     test_data_baseline_percent,
+        #     save=True,
+        #     filename=f"model_perf_rec{filename_suffix}_b",
+        # )
+        # plot_feature_importances(
+        #     clf_sel,
+        #     X_train_sel,
+        #     num=10,
+        #     save=True,
+        #     filename=f"feat_imp{filename_suffix}_b",
+        #     alt_labels=alt_names,
+        # )
+        # plot_permutation_importances(
+        #     clf_sel,
+        #     X_train_sel,
+        #     y_train,
+        #     num=10,
+        #     save=True,
+        #     filename=f"per_imp{filename_suffix}_b",
+        # )
+        # corr_linkage = plot_feature_correlation(
+        #     X_train_sel, save=True, filename=f"feat_corr{filename_suffix}_b"
+        # )

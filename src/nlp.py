@@ -133,7 +133,7 @@ class NLPPipeline:
             "lowercase": True,
             "stop_words": "english",
             "max_features": None,
-            "ngram_range": (1, 1),
+            "ngram_range": (1, 2),
             "dtype": np.int64,
         }
         if self.goal == "cls":
