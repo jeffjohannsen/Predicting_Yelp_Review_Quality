@@ -1,4 +1,4 @@
-![=Header Image=](images/header_image.jpg)
+![Header Image](images/header_image.jpg)
 
 # Predicting Yelp Review Quality
 
