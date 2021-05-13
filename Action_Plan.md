@@ -44,32 +44,38 @@ Code
     * Data Analysis - Pandas
     * Visualization - Matplotlib
     * Machine Learning - Sklearn
-    * Other - Numpy, Spacy
-* SQL - Postgres, SQLAlchemy, psql
+    * Other - PySpark, Numpy, Spacy
+* SQL - SparkSQL, Postgres, SQLAlchemy, psql
 Other
-* AWS RDS, S3
+* AWS S3
 * Git/Github
 
 # Current Focus
 
-1. Run through data acquisition and storage for new Yelp Open Dataset
-2. Expand on Action Plan.
+1. Explore new dataset using EDA and analysis platforms in Python/Pandas, AWS, Other 
+2. Update and Expand on current analysis and visualization.
+3. Locate and finalize interesting questions for the project.
+4. Update Readme with new data acquisition, storage, and processing steps/pipeline.
 
 # Next Steps and Notes
 
 ## Data Acquisition
 
-Access most recent version of Yelp Open Dataset and launch it on AWS S3 and RDS.
+Complete
 
 ## Data Storage
 
-Store Open Dataset in AWS RDS and S3 bucket.
+Complete
 
 ## Data Cleaning and Processing
+
+Initial ETL Complete. More Cleaning and Processing after EDA.
 
 ## Feature Engineering
 
 ## Analysis and Visualization
+
+Current Focus. Explore Analytic Tools
 
 ## NLP
 
