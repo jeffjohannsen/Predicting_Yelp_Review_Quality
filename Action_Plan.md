@@ -41,10 +41,11 @@
 
 Code
 * Python
-    * Data Analysis - Pandas
-    * Visualization - Matplotlib
+    * Data Analysis - Pandas, Dataprep.eda, D-tale
+    * Visualization - Matplotlib, Seaborn
     * Machine Learning - Sklearn
-    * Other - PySpark, Numpy, Spacy
+    * NLP - Spacy, Gensim, NLTK, WordCloud, TextBlob, 
+    * Other - PySpark, Numpy
 * SQL - SparkSQL, Postgres, SQLAlchemy, psql
 Other
 * AWS S3
@@ -52,10 +53,14 @@ Other
 
 # Current Focus
 
-1. Explore new dataset using EDA and analysis platforms in Python/Pandas, AWS, Other 
-2. Update and Expand on current analysis and visualization.
-3. Locate and finalize interesting questions for the project.
-4. Update Readme with new data acquisition, storage, and processing steps/pipeline.
+1. NLP Feature Engineering, Extraction
+    * Tf-Idf pipeline to full dataset via AWS, pySpark
+    * Word2Vec
+    * Doc2Vec
+
+### Project Timeline Overview
+
+NLP Feature Engineering > Analysis and Visualization > Baseline Modeling(LogReg) > Feature Selection and Extraction > Classification Modeling > Target Time Discounting > Regression Modeling > Recommendation System and Custom Cost/Ranking Functions > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
 
 # Next Steps and Notes
 
@@ -69,16 +74,57 @@ Complete
 
 ## Data Cleaning and Processing
 
-Initial ETL Complete. More Cleaning and Processing after EDA.
+Time Discounting prior to Regression Problems
 
 ## Feature Engineering
 
+Main focus is on the review text part of the problem so NLP Feature Engineering is the current focus.
+
 ## Analysis and Visualization
 
-Current Focus. Explore Analytic Tools
+Next step after feature engineering via NLP. Analysis and Visualization of features created via NLP work.
 
-## NLP
+## NLP Feature Engineering
+
+* Basic stuff ported over to pySpark pipeline
+* Tf-IDF, Naive Bayes, SVM
+* Word2Vec
+* Doc2Vec
+* BERT
 
 ## Machine Learning
 
+### Feature Selection and Extraction
+
+* K-Means
+* Hierarchical Clustering
+* Chi-Squared
+* LDA
+* PCA
+* NMF
+* SVD
+
+### Classification Modeling:
+Primary Focus
+* Logistic Regression
+* Decision Tree
+* Random Forest
+* XGBoost
+* Neural Net
+
+### Regression Modeling:
+Secondary Focus
+* Linear Regression, Regularized Regression
+* Decision Tree
+* Random Forest
+* XGBoost
+* Neural Net
+
+### Recommendation System and Custom Cost Functions
+
 ## Deployment and Production
+
+* Flask App
+    * Dashboard
+    * User Interface for inputting reviews to be scored.
+    * /score endpoint for showcasing the cls, reg, and rec-sys model pipelines  
