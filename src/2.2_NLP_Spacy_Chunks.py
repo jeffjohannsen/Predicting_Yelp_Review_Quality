@@ -17,12 +17,14 @@ import spacy
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import postgresql
 
+from confidential import Yelp_2021_DB_endpoint, Yelp_2021_DB_password
+
 pd.set_option("display.float_format", lambda x: "%.5f" % x)
 
 # Import Data in Chunks
 
-db_endpoint = None
-db_password = None
+db_endpoint = Yelp_2021_DB_endpoint
+db_password = Yelp_2021_DB_password
 
 engine = create_engine(
     f"postgresql+psycopg2://postgres:{db_password}@{db_endpoint}/yelp_2021_db"
@@ -122,6 +124,11 @@ ent_list = [
 nlp = spacy.load("en_core_web_sm")
 
 
+def create_spacy_docs(text_series):
+    spacy_docs = list(nlp.pipe(texts=text_series, n_process=-1))
+    return spacy_docs
+
+
 def create_spacy_features(df, text_feature_name):
     """
         Adds various features using Spacy's library and NLP models.
@@ -137,7 +144,7 @@ def create_spacy_features(df, text_feature_name):
                       https://spacy.io/api/annotation#named-entities
     """
 
-    df["spacy_doc"] = df[text_feature_name].apply(lambda x: nlp(x))
+    df["spacy_doc"] = create_spacy_docs(df[text_feature_name])
     df.drop("review_text", axis=1, inplace=True)
 
     df["token_count"] = df["spacy_doc"].apply(lambda x: len(x))
@@ -199,7 +206,10 @@ for chunk in pd.read_sql(
     text = create_spacy_features(chunk, "review_text")
     records_processed += text.shape[0]
     text.to_sql(
-        "text_data_train_spacy", con=engine, index=False, if_exists="append"
+        "text_data_train_spacy_test",
+        con=engine,
+        index=False,
+        if_exists="append",
     )
     stop = time.perf_counter()
     print(f"Total records processed: {records_processed}")
@@ -216,7 +226,10 @@ for chunk in pd.read_sql(
     text = create_spacy_features(chunk, "review_text")
     records_processed += text.shape[0]
     text.to_sql(
-        "text_data_test_spacy", con=engine, index=False, if_exists="append"
+        "text_data_test_spacy_test",
+        con=engine,
+        index=False,
+        if_exists="append",
     )
     stop = time.perf_counter()
     print(f"Total records processed: {records_processed}")
