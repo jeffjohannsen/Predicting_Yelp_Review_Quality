@@ -228,7 +228,7 @@ test_finished = spark.sql(
     """
         SELECT review_id,
             ROUND(rawPrediction[1], 3) AS svm_pred
-        FROM train_pred
+        FROM test_pred
     """
 )
 
