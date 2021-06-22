@@ -54,9 +54,9 @@ Other
 # Current Focus
 
 1. NLP Feature Engineering, Extraction
-    * Tf-Idf pipeline to full dataset via AWS, pySpark
-    * Word2Vec
-    * Doc2Vec
+    * Clustering and Topic Modeling Text for more features
+    * Word Embeddings on PySpark EMR at scale
+    * AutoML for exploration, analysis, and visualization
 
 ### Project Timeline Overview
 
