@@ -44,12 +44,12 @@ from nltk.corpus import stopwords
 spark = (
     ps.sql.SparkSession.builder.appName("Spark NLP")
     .master("local[*]")
-    .config("spark.driver.memory", "16G")
+    .config("spark.driver.memory", "24G")
     .config("spark.driver.maxResultSize", "0")
     .config("spark.kryoserializer.buffer.max", "2000M")
     .config("spark.jars.packages", "com.johnsnowlabs.nlp:spark-nlp_2.12:3.1.0")
     .config(
-        "spark.driver.extraClassPath", "/home/ubuntu/postgresql-42.2.20.jar"
+        "spark.driver.extraClassPath", "/home/ubuntu/postgresql-42.2.22.jar"
     )
     .getOrCreate()
 )
@@ -66,7 +66,7 @@ db_url = f"jdbc:postgresql://{db_endpoint}/yelp_2021_db"
 
 train = spark.read.jdbc(
     url=db_url,
-    table="(SELECT review_id, review_text, target_ufc_bool FROM text_data_train LIMIT 1000) AS tmp_train",
+    table="(SELECT review_id, review_text, target_ufc_bool FROM text_data_train LIMIT 10000) AS tmp_train",
     properties=db_properties,
 )
 test = spark.read.jdbc(
@@ -75,6 +75,7 @@ test = spark.read.jdbc(
     properties=db_properties,
 )
 
+print("Data Loaded")
 print(f"Train Records: {train.count()}")
 print(f"Test Records: {test.count()}")
 
@@ -116,12 +117,12 @@ label_Idxstr = IndexToString(
 
 # Text Prep Options
 
-word_embeddings = (
-    WordEmbeddingsModel()
-    .pretrained()
-    .setInputCols(["document", "lemma"])
-    .setOutputCol("word_embed")
-)
+# word_embeddings = (
+#     WordEmbeddingsModel()
+#     .pretrained()
+#     .setInputCols(["document", "lemma"])
+#     .setOutputCol("word_embed")
+# )
 
 # bert_embeddings = (BertEmbeddings
 #                    .pretrained()
@@ -171,33 +172,39 @@ DL_CLF = (
 
 # Loading Everything to Pipeline
 
+# pipeline = Pipeline().setStages(
+#     [
+#         document_assembler,
+#         tokenizer,
+#         normalizer,
+#         stopwords_cleaner,
+#         lemmatizer,
+#         word_embeddings,
+#         embeddings_sentence,
+#         label_strIdx,
+#         DL_CLF,
+#     ]
+# )
+
 pipeline = Pipeline().setStages(
     [
         document_assembler,
-        tokenizer,
-        normalizer,
-        stopwords_cleaner,
-        lemmatizer,
-        word_embeddings,
-        embeddings_sentence,
+        use,
         label_strIdx,
         DL_CLF,
     ]
 )
 
-# pipeline = (Pipeline()
-#             .setStages([document_assembler,
-#                         use,
-#                         label_strIdx,
-#                         DL_CLF,
-#                        ]))
-
+print("Pipeline Setup")
 
 # Fit and Predict
 
 fit_start = time.perf_counter()
 cls_model = pipeline.fit(train)
 fit_end = time.perf_counter()
+
+print("Fit Complete")
+print(f"Fit Time: {(fit_end - fit_start)/60:.2f} minutes")
 
 transform_start = time.perf_counter()
 test_pred = cls_model.transform(test)
@@ -234,7 +241,7 @@ test_pred = test_pred.select(
     ]
 )
 
-train_pred = cls_model.transform(test)
+train_pred = cls_model.transform(train)
 train_pred = train_pred.select(
     [
         "review_id",
@@ -269,37 +276,38 @@ train_pred = train_pred.select(
 )
 transform_end = time.perf_counter()
 
-# Model Evaluation
-
-eval_start = time.perf_counter()
-evaluator = BinaryClassificationEvaluator().setRawPredictionCol("true_prob")
-auc = evaluator.evaluate(test_pred, {evaluator.metricName: "areaUnderROC"})
-aupr = evaluator.evaluate(test_pred, {evaluator.metricName: "areaUnderPR"})
-
-multi_evaluator = MulticlassClassificationEvaluator().setPredictionCol(
-    "prediction_label"
-)
-accuracy = multi_evaluator.evaluate(
-    test_pred, {multi_evaluator.metricName: "accuracy"}
-)
-precision = multi_evaluator.evaluate(
-    test_pred, {multi_evaluator.metricName: "weightedPrecision"}
-)
-recall = multi_evaluator.evaluate(
-    test_pred, {multi_evaluator.metricName: "weightedRecall"}
-)
-f1 = multi_evaluator.evaluate(test_pred, {multi_evaluator.metricName: "f1"})
-eval_end = time.perf_counter()
-
-print(f"Accuracy: {accuracy:.3f}")
-print(f"AUC: {auc:.3f}")
-print(f"AUPR: {aupr:.3f}")
-print(f"Precision: {precision:.3f}")
-print(f"Recall: {recall:.3f}")
-print(f"F1 Score: {f1:.3f}")
-print(f"Fit Time: {(fit_end - fit_start)/60:.2f} minutes")
+print("Transform Complete")
 print(f"Transform/Predict Time: {transform_end - transform_start:.2f} seconds")
-print(f"Eval Time: {(eval_end - eval_start)/60:.2f} minutes")
+
+# # Model Evaluation
+
+# eval_start = time.perf_counter()
+# evaluator = BinaryClassificationEvaluator().setRawPredictionCol("true_prob")
+# auc = evaluator.evaluate(test_pred, {evaluator.metricName: "areaUnderROC"})
+# aupr = evaluator.evaluate(test_pred, {evaluator.metricName: "areaUnderPR"})
+
+# multi_evaluator = MulticlassClassificationEvaluator().setPredictionCol(
+#     "prediction_label"
+# )
+# accuracy = multi_evaluator.evaluate(
+#     test_pred, {multi_evaluator.metricName: "accuracy"}
+# )
+# precision = multi_evaluator.evaluate(
+#     test_pred, {multi_evaluator.metricName: "weightedPrecision"}
+# )
+# recall = multi_evaluator.evaluate(
+#     test_pred, {multi_evaluator.metricName: "weightedRecall"}
+# )
+# f1 = multi_evaluator.evaluate(test_pred, {multi_evaluator.metricName: "f1"})
+# eval_end = time.perf_counter()
+
+# print(f"Accuracy: {accuracy:.3f}")
+# print(f"AUC: {auc:.3f}")
+# print(f"AUPR: {aupr:.3f}")
+# print(f"Precision: {precision:.3f}")
+# print(f"Recall: {recall:.3f}")
+# print(f"F1 Score: {f1:.3f}")
+# print(f"Eval Time: {(eval_end - eval_start)/60:.2f} minutes")
 
 # Saving Predictions
 
@@ -309,7 +317,7 @@ test_pred.createOrReplaceTempView("test_pred")
 train_finished = spark.sql(
     """
                             SELECT review_id,
-                                ROUND(true_prob, 3) AS glove_prob
+                                ROUND(true_prob, 3) AS use_prob
                             FROM train_pred
                            """
 )
@@ -317,26 +325,32 @@ train_finished = spark.sql(
 test_finished = spark.sql(
     """
                             SELECT review_id,
-                                ROUND(true_prob, 3) AS glove_prob
+                                ROUND(true_prob, 3) AS use_prob
                             FROM test_pred
                           """
 )
 
 train_finished.write.jdbc(
     url=db_url,
-    table="text_data_train_glove",
+    table="text_use_train",
     mode="overwrite",
     properties=db_properties,
 )
 test_finished.write.jdbc(
     url=db_url,
-    table="text_data_test_glove",
+    table="text_use_test",
     mode="overwrite",
     properties=db_properties,
 )
 
+print("Data Saved to RDS")
+
 #  Saving Model
 
 sc = spark.sparkContext
-model_name = "GloVe_all"
+model_name = "USE_all"
 cls_model.save(f"spark_models/{model_name}")
+
+print("Model Saved")
+print("Done")
+print("----------------------------")

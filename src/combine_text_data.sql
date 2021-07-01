@@ -4,8 +4,14 @@ SELECT orig.review_id AS review_id,
 orig.target_ufc_bool AS target_clf,
 orig.target_ufc_count AS target_reg,
 orig.review_stars AS review_stars,
-nb.NB_tfidf_true_prob AS NB_prob,
-svm.svm_pred AS SVM_pred,
+nb.NB_tfidf_true_prob AS nb_prob,
+svm.svm_pred AS svm_pred,
+ft.ft_quality_prob AS ft_prob,
+lda.topic_0_lda AS lda_t1,
+lda.topic_1_lda AS lda_t2,
+lda.topic_2_lda AS lda_t3,
+lda.topic_3_lda AS lda_t4,
+lda.topic_4_lda AS lda_t5,
 base.grade_level AS grade_level,
 base.polarity AS polarity,
 base.subjectivity AS subjectivity,
@@ -183,28 +189,35 @@ spy.ent_time_perc AS ent_time_pct,
 spy.ent_time_count AS ent_time_cnt,     
 spy.ent_work_of_art_perc AS ent_work_of_art_pct,
 spy.ent_work_of_art_count AS ent_work_of_art_cnt
-INTO text_combined_test
-FROM text_data_test AS orig
-JOIN text_basic_test AS base
+INTO text_combined_train
+FROM text_data_train AS orig
+JOIN text_basic_train AS base
 ON orig.review_id = base.review_id
-JOIN text_spacy_test AS spy
+JOIN text_spacy_train AS spy
 ON orig.review_id = spy.review_id
-JOIN text_nb_test AS nb
+JOIN text_nb_train AS nb
 ON orig.review_id = nb.review_id
-JOIN text_svm_test AS svm
-ON orig.review_id = svm.review_id;
-
-
+JOIN text_svm_train AS svm
+ON orig.review_id = svm.review_id
+JOIN text_fasttext_train AS ft
+ON orig.review_id = ft.review_id
+JOIN text_lda_train AS lda
+ON orig.review_id = lda.review_id;
 
 -- Changing to smaller datatypes
 
-
-ALTER TABLE text_data_train
+ALTER TABLE text_combined_train
 ALTER COLUMN ent_work_of_art_cnt TYPE smallint,
 ALTER COLUMN target_reg TYPE smallint,
 ALTER COLUMN review_stars TYPE smallint,
 ALTER COLUMN NB_prob TYPE real,
 ALTER COLUMN svm_pred TYPE real,
+ALTER COLUMN ft_prob TYPE real,
+ALTER COLUMN lda_t1 TYPE real,
+ALTER COLUMN lda_t2 TYPE real,
+ALTER COLUMN lda_t3 TYPE real,
+ALTER COLUMN lda_t4 TYPE real,
+ALTER COLUMN lda_t5 TYPE real,
 ALTER COLUMN grade_level TYPE real,
 ALTER COLUMN polarity TYPE real,
 ALTER COLUMN subjectivity TYPE real,
@@ -380,4 +393,8 @@ ALTER COLUMN ent_quantity_pct TYPE real,
 ALTER COLUMN ent_quantity_cnt TYPE smallint,
 ALTER COLUMN ent_time_pct TYPE real,
 ALTER COLUMN ent_time_cnt TYPE smallint,
-ALTER COLUMN ent_work_of_art_pct TYPE real
+ALTER COLUMN ent_work_of_art_pct TYPE real;
+
+-- Add Primary Key
+
+ALTER TABLE text_data_train ADD PRIMARY KEY (review_id);
