@@ -32,10 +32,25 @@
 
 ## Central Questions
 
-1. Can the quality of a Yelp review be predicted at a level that is worthwhile to implemented within the broader process?
-2. What factors contribute most to the quality of a Yelp review?
+1. Can the quality of a Yelp review be predicted at a level that is worthwhile to be implemented within the broader user interface and experience?
+2. What factors provide the most information regarding the quality of a Yelp review?
 
 ## Methods and Concepts
+
+ETL
+* Distributed Computing
+* MapReduce
+EDA
+NLP
+* Text Readability, Sentiment, Polarity, and Subjectivity
+* Topic Modeling
+* Word and Sentence Embeddings
+* Part of Speech, Named Entity, and Syntactic Dependency Analysis
+ML
+* AutoML
+Recommendation Systems
+Web App
+Visualization and Presentation
 
 ## Tech Used
 
@@ -43,20 +58,28 @@ Code
 * Python
     * Data Analysis - Pandas, Dataprep.eda, D-tale
     * Visualization - Matplotlib, Seaborn
-    * Machine Learning - Sklearn
-    * NLP - Spacy, Gensim, NLTK, WordCloud, TextBlob, 
+    * Machine Learning - Sklearn, PyCaret
+    * NLP - Spacy, Gensim, NLTK, WordCloud, TextBlob, Spark NLP
     * Other - PySpark, Numpy
-* SQL - SparkSQL, Postgres, SQLAlchemy, psql
-Other
-* AWS S3
+* SQL 
+    * SparkSQL
+    * PostgreSQL
+    * SQLAlchemy
+    * psql
+Tech
+* AWS
+    * S3
+    * EC2
+    * RDS
+    * Aurora
+    * EMR 
 * Git/Github
 
 # Current Focus
 
-1. NLP Feature Engineering, Extraction
-    * Clustering and Topic Modeling Text for more features
-    * Word Embeddings on PySpark EMR at scale
-    * AutoML for exploration, analysis, and visualization
+1. Complete Topic Modeling for Feature Engineering
+2. Combine and Convert Datatypes of Processed Text Features
+3. AutoML for exploration, analysis, and visualization
 
 ### Project Timeline Overview
 
@@ -78,19 +101,11 @@ Time Discounting prior to Regression Problems
 
 ## Feature Engineering
 
-Main focus is on the review text part of the problem so NLP Feature Engineering is the current focus.
+See NLP Feature Engineering
 
 ## Analysis and Visualization
 
-Next step after feature engineering via NLP. Analysis and Visualization of features created via NLP work.
-
 ## NLP Feature Engineering
-
-* Basic stuff ported over to pySpark pipeline
-* Tf-IDF, Naive Bayes, SVM
-* Word2Vec
-* Doc2Vec
-* BERT
 
 ## Machine Learning
 
@@ -99,7 +114,6 @@ Next step after feature engineering via NLP. Analysis and Visualization of featu
 * K-Means
 * Hierarchical Clustering
 * Chi-Squared
-* LDA
 * PCA
 * NMF
 * SVD
