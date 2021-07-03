@@ -397,4 +397,4 @@ ALTER COLUMN ent_work_of_art_pct TYPE real;
 
 -- Add Primary Key
 
-ALTER TABLE text_data_train ADD PRIMARY KEY (review_id);
+ALTER TABLE text_combined_train ADD PRIMARY KEY (review_id);
