@@ -77,9 +77,9 @@ Tech
 
 # Current Focus
 
-1. Complete Topic Modeling for Feature Engineering
-2. Combine and Convert Datatypes of Processed Text Features
-3. AutoML for exploration, analysis, and visualization
+1. Feature Extraction and Reduction
+2.  
+3. 
 
 ### Project Timeline Overview
 

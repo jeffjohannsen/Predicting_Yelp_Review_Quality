@@ -1,26 +1,33 @@
 # Imports and Global Settings
+import time
 import numpy as np
 import pandas as pd
 import pickle as pkl
 import seaborn as sns
 import matplotlib.pyplot as plt
+from joblib import dump, load
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, roc_auc_score
 from xgboost import XGBClassifier
 
 pd.set_option("display.float_format", lambda x: "%.5f" % x)
 pd.set_option("display.max_columns", 200)
 pd.set_option("display.max_rows", 200)
 
+# Options
+model_naming_postfix = "_sklearn_base_model_1M"
+
 # Load Data
+start = time.perf_counter()
 data_location_ec2 = "/home/ubuntu/"
 data_location_local = "/home/jeff/Documents/Data_Science_Projects/Yelp_Reviews/data/full_data/model_ready/"
 filepath_prefix = data_location_local
 
-train_records_to_load = 10000
-test_records_to_load = 10000
+train_records_to_load = 1000000
+test_records_to_load = 1000000
 
 datatypes = {
     "target_reg": "int16",
@@ -227,7 +234,10 @@ test = pd.read_csv(
     dtype=datatypes,
 )
 
-print("Data Load Complete")
+end = time.perf_counter()
+
+print("\nData Load Complete")
+print(f"Took {(end-start):.2f} seconds")
 print(f"Train Shape: {train.shape}")
 print(f"Test Shape: {test.shape}")
 
@@ -236,28 +246,91 @@ X_test = test.drop(columns=["review_id", "target_clf", "target_reg"])
 y_train = train["target_clf"]
 y_test = test["target_clf"]
 
-print("Data Split Complete")
+print("\nData Split Complete")
 print(f"X_train Shape: {X_train.shape}")
 print(f"X_test Shape: {X_test.shape}")
 print(f"y_train Shape: {y_train.shape}")
 print(f"y_test Shape: {y_test.shape}")
 
 # Preprocessing Options
+start = time.perf_counter()
 standard_scaler = StandardScaler()
 X_train_scaled = standard_scaler.fit_transform(X_train)
 X_test_scaled = standard_scaler.transform(X_test)
+end = time.perf_counter()
 
-print("Train and Test Data Scaled")
+print("\nTrain and Test Data Scaled")
+print(f"Preprocessing took {(end-start):.2f} seconds.")
+
+
+class Base_Model_Process:
+    def __init__(self, model, model_name):
+        self.model = model
+        self.model_name = model_name
+        self.model_predictions = None
+        self.model_predict_proba = None
+
+    def fit_model(self, X_train, y_train):
+        start = time.perf_counter()
+        self.model.fit(X_train, y_train)
+        end = time.perf_counter()
+        print(f"\n{self.model_name} Fit Complete")
+        print(f"Training took {(end-start)/60:.2f} minutes.")
+
+    def predict_model(self, X_test):
+        start = time.perf_counter()
+        self.model_predictions = self.model.predict(X_test)
+        self.model_predict_proba = self.model.predict_proba(X_test)[:, 1]
+        end = time.perf_counter()
+        print(f"\n{self.model_name} Predictions Complete")
+        print(f"Predictions took {(end-start)/60:.2f} minutes.")
+
+    def score_model(self, y_test):
+        start = time.perf_counter()
+        cls_report = classification_report(y_test, self.model_predictions)
+        auc_score = roc_auc_score(y_test, self.model_predict_proba)
+        end = time.perf_counter()
+        print(f"\n{self.model_name} Scoring Complete")
+        print(f"Scoring took {(end-start):.2f} seconds.")
+        print(f"AUC Score: {auc_score:.2f}")
+        print("-----------Classification Report-----------")
+        print(cls_report)
+
+    def save_model(self, model_filename, model_name_postfix):
+        dump(self.model, f"{model_filename}{model_name_postfix}.joblib")
+        print(f"{self.model_name} Save Complete")
+        print("===========================================")
+
 
 # Logistic Regression
+print(">>>>>>>>>>>>>>>> Logistic Regression <<<<<<<<<<<<<<<<<<<<<<<<<")
 log_reg_clf = LogisticRegression(random_state=7, n_jobs=-1, verbose=2)
-log_reg_clf.fit(X_train_scaled, y_train)
+log_reg_process = Base_Model_Process(log_reg_clf, "Logistic Regression")
+log_reg_process.fit_model(X_train_scaled, y_train)
+log_reg_process.predict_model(X_test_scaled)
+log_reg_process.score_model(y_test)
+log_reg_process.save_model("log_reg", model_naming_postfix)
 # Decision Tree
+print(">>>>>>>>>>>>>>>> Decision Tree <<<<<<<<<<<<<<<<<<<<<<<<<")
 tree_clf = DecisionTreeClassifier(random_state=7)
-tree_clf.fit(X_train, y_train)
+tree_process = Base_Model_Process(tree_clf, "Decision Tree")
+tree_process.fit_model(X_train, y_train)
+tree_process.predict_model(X_test)
+tree_process.score_model(y_test)
+tree_process.save_model("tree", model_naming_postfix)
 # Random Forest
+print(">>>>>>>>>>>>>>>> Random Forest <<<<<<<<<<<<<<<<<<<<<<<<<")
 forest_clf = RandomForestClassifier(random_state=7, n_jobs=-1, verbose=2)
-forest_clf.fit(X_train, y_train)
+forest_process = Base_Model_Process(forest_clf, "Random Forest")
+forest_process.fit_model(X_train, y_train)
+forest_process.predict_model(X_test)
+forest_process.score_model(y_test)
+forest_process.save_model("forest", model_naming_postfix)
 # XGBoost
+print(">>>>>>>>>>>>>>>> XGBoost <<<<<<<<<<<<<<<<<<<<<<<<<")
 xgb_clf = XGBClassifier(random_state=7, n_jobs=-1, verbosity=2)
-xgb_clf.fit(X_train, y_train)
+xgb_process = Base_Model_Process(xgb_clf, "XGBoost")
+xgb_process.fit_model(X_train, y_train)
+xgb_process.predict_model(X_test)
+xgb_process.score_model(y_test)
+xgb_process.save_model("xgboost", model_naming_postfix)
