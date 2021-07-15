@@ -78,7 +78,7 @@ Tech
 # Current Focus
 
 1. Feature Extraction and Reduction
-2.  
+2. Feature Selection 
 3. 
 
 ### Project Timeline Overview
