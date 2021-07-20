@@ -48,6 +48,8 @@ NLP
 * Part of Speech, Named Entity, and Syntactic Dependency Analysis
 ML
 * AutoML
+* Dimensionality Reduction
+    * PCA
 Recommendation Systems
 Web App
 Visualization and Presentation
@@ -58,7 +60,7 @@ Code
 * Python
     * Data Analysis - Pandas, Dataprep.eda, D-tale
     * Visualization - Matplotlib, Seaborn
-    * Machine Learning - Sklearn, PyCaret
+    * Machine Learning - Sklearn, PyCaret, Mlflow
     * NLP - Spacy, Gensim, NLTK, WordCloud, TextBlob, Spark NLP
     * Other - PySpark, Numpy
 * SQL 
@@ -77,13 +79,13 @@ Tech
 
 # Current Focus
 
-1. Feature Extraction and Reduction
-2. Feature Selection 
+1. 
+2.  
 3. 
 
 ### Project Timeline Overview
 
-NLP Feature Engineering > Analysis and Visualization > Baseline Modeling(LogReg) > Feature Selection and Extraction > Classification Modeling > Target Time Discounting > Regression Modeling > Recommendation System and Custom Cost/Ranking Functions > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
+~~NLP Feature Engineering~~ > Analysis and Visualization > ~~Baseline Modeling(LogReg)~~ > ~~Feature Selection and Extraction~~ > ~~Classification Modeling~~ > Target Time Discounting > Regression Modeling > Recommendation System and Custom Cost/Ranking Functions > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
 
 # Next Steps and Notes
 
@@ -101,30 +103,24 @@ Time Discounting prior to Regression Problems
 
 ## Feature Engineering
 
-See NLP Feature Engineering
+Complete
 
 ## Analysis and Visualization
 
 ## NLP Feature Engineering
 
+Complete
+
 ## Machine Learning
+
 
 ### Feature Selection and Extraction
 
-* K-Means
-* Hierarchical Clustering
-* Chi-Squared
-* PCA
-* NMF
-* SVD
+Complete
 
 ### Classification Modeling:
 Primary Focus
 * Logistic Regression
-* Decision Tree
-* Random Forest
-* XGBoost
-* Neural Net
 
 ### Regression Modeling:
 Secondary Focus
