@@ -34,6 +34,8 @@
 
 1. Can the quality of a Yelp review be predicted at a level that is worthwhile to be implemented within the broader user interface and experience?
 2. What factors provide the most information regarding the quality of a Yelp review?
+3. What makes a quality review and what makes a non-quality review?
+4. What provides more information. The text of the review or metadata surrounding the review?
 
 ## Methods and Concepts
 
@@ -42,6 +44,7 @@ ETL
 * MapReduce
 EDA
 NLP
+* Basic Text Features (Word, Character, Token Counts, etc.)
 * Text Readability, Sentiment, Polarity, and Subjectivity
 * Topic Modeling
 * Word and Sentence Embeddings
@@ -50,6 +53,8 @@ ML
 * AutoML
 * Dimensionality Reduction
     * PCA
+* Logistic Regression
+* Linear Regression
 Recommendation Systems
 Web App
 Visualization and Presentation
@@ -62,7 +67,7 @@ Code
     * Visualization - Matplotlib, Seaborn
     * Machine Learning - Sklearn, PyCaret, Mlflow
     * NLP - Spacy, Gensim, NLTK, WordCloud, TextBlob, Spark NLP
-    * Other - PySpark, Numpy
+    * Other - PySpark, Numpy, Scipy
 * SQL 
     * SparkSQL
     * PostgreSQL
@@ -79,13 +84,15 @@ Tech
 
 # Current Focus
 
-1. 
-2.  
-3. 
+1. AutoMl Regression with PyCaret
+2. Feature Selection for Regression 
+3. Final Models for Regression
+4. Add Final Model Predict Proba and Regression Prediction to train and test csv files (new file)
+5. Research and Explore Learning to Rank and Machine Learning Ranking Approaches
 
 ### Project Timeline Overview
 
-~~NLP Feature Engineering~~ > Analysis and Visualization > ~~Baseline Modeling(LogReg)~~ > ~~Feature Selection and Extraction~~ > ~~Classification Modeling~~ > Target Time Discounting > Regression Modeling > Recommendation System and Custom Cost/Ranking Functions > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
+~~NLP Feature Engineering~~ > Analysis and Visualization > ~~Baseline Modeling(LogReg)~~ > ~~Feature Selection and Extraction~~ > ~~Classification Modeling~~ > ~~Target Time Discounting~~ > Regression Modeling > Recommendation System and Custom Cost/Ranking Functions > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
 
 # Next Steps and Notes
 
@@ -99,13 +106,15 @@ Complete
 
 ## Data Cleaning and Processing
 
-Time Discounting prior to Regression Problems
+Complete
 
 ## Feature Engineering
 
 Complete
 
 ## Analysis and Visualization
+
+ToDo
 
 ## NLP Feature Engineering
 
@@ -119,16 +128,13 @@ Complete
 Complete
 
 ### Classification Modeling:
-Primary Focus
-* Logistic Regression
+
+Complete
 
 ### Regression Modeling:
-Secondary Focus
+* PyCaret AutoML
 * Linear Regression, Regularized Regression
-* Decision Tree
-* Random Forest
 * XGBoost
-* Neural Net
 
 ### Recommendation System and Custom Cost Functions
 
