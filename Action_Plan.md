@@ -53,9 +53,12 @@ ML
 * AutoML
 * Dimensionality Reduction
     * PCA
+    * Feature Selection
+        * ANOVA
+        * Correlation
+        * Tree-Based Feature Importance
 * Logistic Regression
 * Linear Regression
-Recommendation Systems
 Web App
 Visualization and Presentation
 
@@ -92,12 +95,11 @@ Tech
 
 ### Project Timeline Overview
 
-~~NLP Feature Engineering~~ > Analysis and Visualization > ~~Baseline Modeling(LogReg)~~ > ~~Feature Selection and Extraction~~ > ~~Classification Modeling~~ > ~~Target Time Discounting~~ > Regression Modeling > Recommendation System and Custom Cost/Ranking Functions > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
+~~NLP Feature Engineering~~ > Analysis and Visualization > ~~Baseline Modeling(LogReg)~~ > ~~Feature Selection and Extraction~~ > ~~Classification Modeling~~ > ~~Target Time Discounting~~ > ~~Regression Modeling~~ > Review Ranking > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
 
 # Next Steps and Notes
 
 ## Data Acquisition
-
 Complete
 
 ## Data Storage
@@ -105,38 +107,28 @@ Complete
 Complete
 
 ## Data Cleaning and Processing
-
 Complete
 
 ## Feature Engineering
-
 Complete
 
 ## Analysis and Visualization
-
 ToDo
 
 ## NLP Feature Engineering
-
 Complete
 
 ## Machine Learning
-
-
 ### Feature Selection and Extraction
-
 Complete
 
 ### Classification Modeling:
-
 Complete
 
 ### Regression Modeling:
-* PyCaret AutoML
-* Linear Regression, Regularized Regression
-* XGBoost
+Complete
 
-### Recommendation System and Custom Cost Functions
+### Review Ranking and Custom Cost Functions
 
 ## Deployment and Production
 
