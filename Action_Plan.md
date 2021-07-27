@@ -87,15 +87,11 @@ Tech
 
 # Current Focus
 
-1. AutoMl Regression with PyCaret
-2. Feature Selection for Regression 
-3. Final Models for Regression
-4. Add Final Model Predict Proba and Regression Prediction to train and test csv files (new file)
-5. Research and Explore Learning to Rank and Machine Learning Ranking Approaches
+1. Create Outline for displaying this project. Web App, Readme, Presentation
 
 ### Project Timeline Overview
 
-~~NLP Feature Engineering~~ > Analysis and Visualization > ~~Baseline Modeling(LogReg)~~ > ~~Feature Selection and Extraction~~ > ~~Classification Modeling~~ > ~~Target Time Discounting~~ > ~~Regression Modeling~~ > Review Ranking > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
+~~NLP Feature Engineering~~ > Analysis and Visualization > ~~Baseline Modeling(LogReg)~~ > ~~Feature Selection and Extraction~~ > ~~Classification Modeling~~ > ~~Target Time Discounting~~ > ~~Regression Modeling~~ > ~~Review Ranking~~ > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
 
 # Next Steps and Notes
 
@@ -129,6 +125,9 @@ Complete
 Complete
 
 ### Review Ranking and Custom Cost Functions
+
+Complete
+Further work will be part of "Next Steps"
 
 ## Deployment and Production
 
