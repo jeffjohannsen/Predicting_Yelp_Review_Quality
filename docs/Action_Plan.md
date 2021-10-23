@@ -1,21 +1,5 @@
 # Yelp Review Quality - Project Outline and Action Plan
 
-## Table of Contents
-* [Project Goals](#Project-Goals)
-    * [Central Questions](#Central-Questions)
-    * [Methods and Concepts](#Methods-and-Concepts)
-    * [Tech Used](#Tech-Used)
-* [Current Focus](#Current-Focus)
-* [Next Steps and Notes](#Next-Steps-and-Notes)
-    * [Data Acquisition](#Data-Acquisition)
-    * [Data Storage](#Data-Storage)
-    * [Data Cleaning and Processing](#Data-Cleaning-and-Processing)
-    * [Feature Engineering](#Feature-Engineering)
-    * [Analysis and Visualization](#Analysis-and-Visualization)
-    * [NLP](#NLP)
-    * [Machine Learning](#Machine-Learning)
-    * [Deployment and Production](#Deployment-and-Production)
-
 # Project Goals
 
 ### Primary Goal 
@@ -84,54 +68,3 @@ Tech
     * Aurora
     * EMR 
 * Git/Github
-
-# Current Focus
-
-1. Create Outline for displaying this project. Web App, Readme, Presentation
-
-### Project Timeline Overview
-
-~~NLP Feature Engineering~~ > Analysis and Visualization > ~~Baseline Modeling(LogReg)~~ > ~~Feature Selection and Extraction~~ > ~~Classification Modeling~~ > ~~Target Time Discounting~~ > ~~Regression Modeling~~ > ~~Review Ranking~~ > Flask App and Plotly/Dash Dashboard > End Phase 2 > Non-Text Data Starting with improved feature time discounting
-
-# Next Steps and Notes
-
-## Data Acquisition
-Complete
-
-## Data Storage
-
-Complete
-
-## Data Cleaning and Processing
-Complete
-
-## Feature Engineering
-Complete
-
-## Analysis and Visualization
-ToDo
-
-## NLP Feature Engineering
-Complete
-
-## Machine Learning
-### Feature Selection and Extraction
-Complete
-
-### Classification Modeling:
-Complete
-
-### Regression Modeling:
-Complete
-
-### Review Ranking and Custom Cost Functions
-
-Complete
-Further work will be part of "Next Steps"
-
-## Deployment and Production
-
-* Flask App
-    * Dashboard
-    * User Interface for inputting reviews to be scored.
-    * /score endpoint for showcasing the cls, reg, and rec-sys model pipelines  

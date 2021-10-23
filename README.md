@@ -14,12 +14,11 @@
     * [Time Discounting](#Time-Discounting)
     * [Target Creation](#Target-Creation)
     * [Metadata Feature Engineering](#Metadata-Feature-Engineering)
-    * [NLP Feature Engineering](#NLP-Feature-Engineering)
+* [Exploring the Review Text](#Exploring-the-Review-Text)
 * [Data Modeling](#Data-Modeling)
     * [Model Setup](#Model-Setup)
     * [Model Results](#Model-Results)
 * [Conclusions](#Conclusions)
-* [Next Steps](#Next-Steps)
 * [Photo and Data Credits](#Photo-and-Data-Credits)
 
 <br/><br/>
@@ -86,11 +85,10 @@ This dataset consists of 5 separate json files totaling ~10GB of data uncompress
 
 My original data came in 5 json files. The first step was to simplify, combine, and store these files in a way that would be easily searchable for future data analysis, cleaning, and feature engineering.
 
-I worked in MongoDB for a little bit but ended up going the SQL route due to only having a subset of the data. If I was dealing with all of the data like Yelp is, it would be reasonable to make more use of NoSQL databases like MongoDB.
+The main Extract, Transform, Load (ETL) Pipeline utilized Apache Spark to convert the original json files into a Postgres Database hosted on AWS RDS. 
 
-This database will eventually be stored on AWS for easier access when scaling up the prediction process.
 
-![Data Storage Process](images/data_storage_flow.png)
+![Data Storage Process](images/pyspark_etl_pipeline.png)
 
 ## Original Working Dataset
 
@@ -178,15 +176,38 @@ Features added include:
     * Review Stars vs. User Average
     * Review Stars vs. Business Average
 
+<br/><br/>
+
+# Exploring the Review Text
+
+>***Due to the review text being so important, I took a deeper dive into this area using a newer version of the Yelp dataset. This is the most recent "version" of the project and most of the contents of the src, notebooks, and models folders are focused on the review text specifically.***
+
+The most important part of determining the quality of a review is understanding the actual text of the review.
+
+**Why?**
+* The text of the review is central to the main goal of the project. Other data points are just a means to reach the main goal. 
+* The text of the review does not suffer from the difficulty of estimating time decay that other dataset features are plagued by.
+* Insights learned from the text have a greater probability of being useful on other types of reviews like Google Places or Amazon Shopping.
+
+## Quick Look
+
+The first step to understanding the review text is to take a look at the most common words in Quality and Non-Quality reviews. As is seen below, the wordclouds of common words are very similar. Unfortunately this means that seperating what reviews are useful and which are not useful is going to take some more digging and some more powerful Natural Lanaguage Processing tools.
+
+![Quality vs. Non-Quality Wordclouds](images/wordclouds.png)
+
 ## NLP Feature Engineering
 
-The most important part of determining the quality of a review is understanding the actual text of the review. To do this I created new data features using Natural Language Processing.
+In order to learn more about the review text I created over 100 new possible features using Natural Language Processing (NLP). These features are eventually condensed and used as the input to the final machine learning model that will eventually predict whether a review is quality or not.
+
+![NLP Features](images/nlp_features.png)
 
 NLP features added include:
 * Basic Text Features
     * Review Length, Word Count, etc.
 * Readability 
     * Flesch–Kincaid Grade Level
+* Sentiment Analysis
+    * Polarity, Subjectivity
 * Parts of Speech
     * Noun, Verb, Adjective, etc. 
 * Syntactic Dependency Relations 
@@ -195,6 +216,8 @@ NLP features added include:
     * Person, Place, Event, etc.
 * ML Model Predictions
     * SVM and Naive Bayes using TF-IDF
+    * Word Embeddings via Fasttext
+    * Topic Modeling using LDA
 
 <br/><br/>
 
@@ -264,18 +287,7 @@ This graph shows the data that was most important for making predictions. Unsurp
 ### 1. The quality of reviews can be determined with an accuracy better than chance.
 ### 2. Data about the review text and the user creating the review are the most important to consider when predicting the quality of a review.
 
-Knowing that the quality of reviews can be predicted, as well as which pieces of data are the most important for these predictions is a stepping stone for helping Yelp and similar companies to better surface reviews that improve user retention, engagement and satisfaction. I was only able to scratch the surface of learning about the review text using NLP. Diving deeper in this area is my next goal. Combining NLP with big data tools like AWS and Spark will allow me to improve my understanding of the reviews and improve my model’s predictions in the future.   
-
-<br/><br/>
-
-# Next Steps
-
-Improve the ability to predict review quality by:
-* Diving deeper into the review text using more NLP tools.
-* Improve time discounting adjustments.
-* Scaling up the capacity for data analysis by utilizing AWS and Apache Spark.
-* Testing new machine learning models including XG Boost and Neural Networks.
-* Creating custom cost functions that better represent the overall goal.    
+Knowing that the quality of reviews can be predicted, as well as which pieces of data are the most important for these predictions is a stepping stone for helping Yelp and similar companies to better surface reviews that improve user retention, engagement and satisfaction.       
 
 <br/><br/>
 
