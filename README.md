@@ -7,7 +7,7 @@
     * [Motivation](#Motivation)
     * [Goal and Central Questions](#Goal-and-Central-Questions)
     * [The Data](#The-Data)
-* [Data Storage, ETL](#Data-Storage,-ETL)
+* [Data Storage and ETL](#Data-Storage-and-ETL)
 * [EDA](#EDA)
 * [Data Pipeline](#Data-Pipeline)
     * [Data Cleaning](#Data-Cleaning)
@@ -81,7 +81,7 @@ This dataset consists of 5 separate json files totaling ~10GB of data uncompress
 
 <br/><br/>
 
-# Data Storage, ETL
+# Data Storage and ETL
 
 My original data came in 5 json files. The first step was to simplify, combine, and store these files in a way that would be easily searchable for future data analysis, cleaning, and feature engineering.
 
