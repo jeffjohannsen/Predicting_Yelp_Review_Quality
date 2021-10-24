@@ -7,7 +7,7 @@
     * [Motivation](#Motivation)
     * [Goal and Central Questions](#Goal-and-Central-Questions)
     * [The Data](#The-Data)
-* [Data Storage](#Data-Storage)
+* [Data Storage, ETL](#Data-Storage,-ETL)
 * [EDA](#EDA)
 * [Data Pipeline](#Data-Pipeline)
     * [Data Cleaning](#Data-Cleaning)
@@ -81,7 +81,7 @@ This dataset consists of 5 separate json files totaling ~10GB of data uncompress
 
 <br/><br/>
 
-# Data Storage
+# Data Storage, ETL
 
 My original data came in 5 json files. The first step was to simplify, combine, and store these files in a way that would be easily searchable for future data analysis, cleaning, and feature engineering.
 
@@ -187,17 +187,17 @@ The most important part of determining the quality of a review is understanding 
 **Why?**
 * The text of the review is central to the main goal of the project. Other data points are just a means to reach the main goal. 
 * The text of the review does not suffer from the difficulty of estimating time decay that other dataset features are plagued by.
-* Insights learned from the text have a greater probability of being useful on other types of reviews like Google Places or Amazon Shopping.
+* Insights learned from the text have a better chance of being useful on other types of reviews like Google Places or Amazon Shopping.
 
 ## Quick Look
 
-The first step to understanding the review text is to take a look at the most common words in Quality and Non-Quality reviews. As is seen below, the wordclouds of common words are very similar. Unfortunately this means that seperating what reviews are useful and which are not useful is going to take some more digging and some more powerful Natural Lanaguage Processing tools.
+The first step to understanding the review text is to take a look at the most common words in Quality and Non-Quality reviews. As is seen below, the wordclouds of common words are very similar. Unfortunately, this means that seperating which reviews are useful and which are not useful is going to take some more digging and some more powerful tools.
 
 ![Quality vs. Non-Quality Wordclouds](images/wordclouds.png)
 
 ## NLP Feature Engineering
 
-In order to learn more about the review text I created over 100 new possible features using Natural Language Processing (NLP). These features are eventually condensed and used as the input to the final machine learning model that will eventually predict whether a review is quality or not.
+In order to learn more about the review text I created over 100 new features using Natural Language Processing (NLP). These features are condensed and used as the input to a machine learning model that will make the final predictions about whether a review is quality or not.
 
 ![NLP Features](images/nlp_features.png)
 
@@ -216,7 +216,7 @@ NLP features added include:
     * Person, Place, Event, etc.
 * ML Model Predictions
     * SVM and Naive Bayes using TF-IDF
-    * Word Embeddings via Fasttext
+    * Word Embeddings via fastText
     * Topic Modeling using LDA
 
 <br/><br/>
@@ -225,34 +225,16 @@ NLP features added include:
 
 ## Model Setup
 
-Multiple models were tested and the hyperparameters were tuned using cross validation. For now a random forest is the best performing model.
+Throughout the multiple versions of this project, various machine learning models were tested and compared along with multiple dimensionality reduction techniques. PyCaret was used for quick model comparison and testing. Sklearn was used to build the final models. 
 
-### Model Choice: Random Forest Classifier
+### Note About Model Performance Metrics and Decision Threshold
 
-Why?
-1. Easy to setup and work with.
-2. Good results
-3. Provided quick feedback on whether the questions were worth pursuing or not.
-
-### Binary Classification 
-
-Two Options:   
-1. The review in question **IS** a quality review. Coded as 1.
-2. The review in question **IS NOT** a quality review. Coded as 0.
-
-### Class Balance
-* The classes are very close to equal.
-* 48% of reviews are quality.
-* 52% of reviews are not quality. 
-
-### Model Performance Metrics and Decision Threshold
-
-Now - Accuracy
+Current Metric - Accuracy
 * Most common and well understood metric. Best for an initial proof of concept. 
 * If the model is not accurate enough then the second central question about feature importances is not worthwhile. 
 * Default 0.5 threshold. Again to get a feel for if the central question is reasonable.
 
-Later - Precision and Accuracy 
+Future Metrics - Precision and Accuracy 
 * Typically only a couple reviews are shown to a user.
 * If a review that is not quality ends up being predicted as quality (a false positive) and then is surfaced out of hundreds of possible reviews. That is a pretty big failure.
 * As the total number of reviews to choose from grows, the more costly a false positive becomes and the less costly a false negative becomes.
@@ -266,20 +248,22 @@ Later - Precision and Accuracy
 ## Central Question 1:
 ## Can the quality of a review be determined by data surrounding the review?  
 
-After running the random forest I got a prediction accuracy of 73%. This is an improvement over predicting the majority class which is 52% accurate as well as random chance which is 50%.
+Yes. The quality of a review can be determined with an accuracy better than chance. Both the review text and data surrounding the review are required to get the best possible accuracy.
 
-<img src="images/model_perf_rec_both_1000k_2021-01-12_01-35-21.png" alt="Model Results" width="1000" height="600"/>
+![Model Results](images/model_results.png)
 
 ## Feature Importance
 
 ## Central Question 2:
 ## What types of data are most useful for predicting review quality?
 
-The typical way to answer this sort of question with a random forest is using feature importance. This graph shows the data that was most important for making predictions. Unsurprisingly, the text of the review and the data about the user creating the review are the most useful.
+Using feature importances and other methods for determining the most important features, I found that three categories were the most useful in predicting review quality. 
 
-<img src="images/feat_imp_both_100k_2021-01-11_23-31-11.png" alt="Feature Importances" width="900" height="600"/>
+* The most useful were predictions from NLP models using the review text like support vector machines (SVM), Naive Bayes (NB), and fastText.
+* The second most useful were data points surrounding the user that created the review.
+* The third most useful were other data points extracted from the text like word counts, sentiment analysis, and reading level.
 
-This graph shows the data that was most important for making predictions. Unsurprisingly, the text of the review and the data about the user creating the review are the most useful.
+![Important Features](images/most_useful_data_sources.png)
 
 <br/><br/>
 
