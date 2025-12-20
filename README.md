@@ -2,7 +2,37 @@
 
 # Predicting Yelp Review Quality
 
-> **Note**: This project is currently undergoing refactoring and modernization. See [TODO.md](TODO.md) for current work and [Project Documentation](#project-documentation) for technical details.
+> **Project Status**: Two-Phase Approach  
+> **Phase 1** (Current): Refactoring 2020-era academic ML pipeline for code quality and structure  
+> **Phase 2** (Future): SOTA rebuild with transformers/LLMs and performance comparison
+>
+> See [TODO.md](TODO.md) for active work and [CRITICAL_DECISIONS.md](docs/CRITICAL_DECISIONS.md) for architectural rationale
+
+---
+
+## 📖 About This Project
+
+This project represents **two distinct approaches** to predicting Yelp review quality:
+
+### Phase 1: Classical ML Approach (2020-Era)
+Original academic capstone project using traditional feature engineering and classical NLP:
+- **Methodology**: 80+ manually engineered features from text, metadata, and temporal patterns
+- **NLP Techniques**: TF-IDF, FastText embeddings, LDA topic modeling, spaCy linguistic analysis
+- **Models**: Logistic Regression, Random Forest, XGBoost (sklearn)
+- **Status**: Being refactored for code quality while preserving original methodology
+- **Value**: Demonstrates deep understanding of classical ML and feature engineering
+
+### Phase 2: Modern SOTA Approach (2025) - Coming Soon
+Rebuild using state-of-the-art NLP/ML techniques:
+- **Methodology**: Transformer-based embeddings with minimal feature engineering
+- **NLP Techniques**: BERT/sentence-transformers (384-dim embeddings replace 80+ features)
+- **Models**: Fine-tuned transformers or simple neural nets on embeddings
+- **Goal**: Compare classical vs modern approaches, quantify improvements
+- **Value**: Shows evolution of NLP methods and current best practices
+
+**Why Both?** Understanding the progression from classical to modern ML is crucial for knowing when to use which approach. This project demonstrates both.
+
+---
 
 ## Table of Contents
 * [Introduction](#Introduction)
@@ -314,25 +344,55 @@ This project has comprehensive technical documentation for developers and contri
 
 ### Project Structure
 ```
-├── src/                    # Production scripts (1.x ETL, 2.x NLP, 4.x+ ML)
-├── notebooks/              # Jupyter notebooks (exploration & development)
+├── src/                    # Production scripts
+│   ├── utils/             # NEW - Reusable utilities (time_discount, spark_helpers)
+│   ├── config.py          # NEW - Centralized configuration
+│   └── [1.x-11.x scripts] # Pipeline stages (ETL, NLP, ML)
+├── notebooks/              # Jupyter notebooks (exploration & viz)
 ├── models/                 # Trained models (base, final, NLP)
 ├── data/
-│   ├── full_data/         # Complete dataset (~10GB)
-│   └── example_data/      # Sample data for testing
-├── docs/                  # All documentation
+│   ├── parquet_2021/      # NEW - Parquet format data (6.7 GB)
+│   ├── processed/         # NEW - Pipeline outputs
+│   └── full_data/         # Original JSON data (~10GB)
+├── docs/                  # Comprehensive documentation (12 files)
+├── archive/               # Preserved legacy code
 └── images/                # Plots and diagrams
 ```
 
+### Documentation
+
+**Quick Links**:
+- [STATUS.md](docs/STATUS.md) - Current project status and next steps
+- [TODO.md](TODO.md) - Detailed task tracking and roadmap
+- [CRITICAL_DECISIONS.md](docs/CRITICAL_DECISIONS.md) - Architectural decisions and rationale
+
+**Phase 1 Documentation** (2020-Era Refactoring):
+- [CODE_STRUCTURE.md](docs/CODE_STRUCTURE.md) - Codebase organization analysis
+- [PIPELINE_ANALYSIS.md](docs/PIPELINE_ANALYSIS.md) - Pipeline flow and dependencies
+- [DATA_INVENTORY.md](docs/DATA_INVENTORY.md) - Complete data catalog
+- [STORAGE_STRATEGY.md](docs/STORAGE_STRATEGY.md) - Parquet vs PostgreSQL rationale
+- [data_schemas.md](docs/data_schemas.md) - Full schema documentation
+- [model_catalog.md](docs/model_catalog.md) - 8533 model experiments tracked
+
+**Technical Details**:
+- [hardcoded_paths_inventory.md](docs/hardcoded_paths_inventory.md) - Path refactoring needs
+- [duplicate_code_analysis.md](docs/duplicate_code_analysis.md) - Code consolidation opportunities
+- [deprecated_code_inventory.md](docs/deprecated_code_inventory.md) - Legacy code catalog
+- [file_dependencies.md](docs/file_dependencies.md) - Pipeline execution order
+
 ### Current Status
 
-**⚠️ Project is in Phase 1 of refactoring:**
-- Phase 1: Discovery & Documentation ✅ (In Progress)
-- Phase 2: Configuration Management (Next)
-- Phase 3: Code Standards & Cleanup
-- Phase 4+: Modernization & Testing
+**Phase 1 - 2020-Era Refactoring (Active)**:
+- ✅ Stage 0: Foundation complete (data conversion, config, docs)
+- 🔄 Stage 1: ETL refactoring (90% - testing pending)
+- ⏳ Stages 2-8: NLP and ML refactoring (queued)
 
-See [TODO.md](TODO.md) for detailed progress and upcoming work.
+**Phase 2 - SOTA Rebuild (Planned)**:
+- Modern transformer-based approach (BERT/sentence-transformers)
+- Side-by-side comparison with Phase 1
+- Performance benchmarks and analysis
+
+See [STATUS.md](docs/STATUS.md) for detailed progress tracking.
 
 <br/><br/>
 
