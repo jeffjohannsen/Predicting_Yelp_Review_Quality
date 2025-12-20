@@ -2,6 +2,8 @@
 
 # Predicting Yelp Review Quality
 
+> **Note**: This project is currently undergoing refactoring and modernization. See [TODO.md](TODO.md) for current work and [Project Documentation](#project-documentation) for technical details.
+
 ## Table of Contents
 * [Introduction](#Introduction)
     * [Motivation](#Motivation)
@@ -19,6 +21,7 @@
     * [Model Setup](#Model-Setup)
     * [Model Results](#Model-Results)
 * [Conclusions](#Conclusions)
+* [Project Documentation](#project-documentation)
 * [Photo and Data Credits](#Photo-and-Data-Credits)
 
 <br/><br/>
@@ -264,6 +267,72 @@ Using feature importances and other methods for determining the most important f
 * The third most useful were other data points extracted from the text like word counts, sentiment analysis, and reading level.
 
 ![Important Features](images/most_useful_data_sources.png)
+
+<br/><br/>
+
+# Project Documentation
+
+## 📚 Technical Documentation
+
+This project has comprehensive technical documentation for developers and contributors:
+
+### Core Documentation
+- **[TODO.md](TODO.md)** - Active project management, current sprint, and refactoring roadmap
+- **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Complete project guide for AI assistants (technology stack, architecture, coding standards)
+
+### Pipeline & Architecture
+- **[File Dependencies](docs/file_dependencies.md)** - Complete pipeline execution order and file dependencies
+- **[Pipeline Flow Diagram](docs/pipeline_flow_diagram.md)** - Visual representation of data flow through all stages
+- **[Data Schemas](docs/data_schemas.md)** - JSON, PostgreSQL, and CSV data structures
+
+### Models & Performance
+- **[Model Catalog](docs/model_catalog.md)** - All trained models, performance metrics, and usage instructions
+
+### Code Quality & Refactoring
+- **[Hardcoded Paths Inventory](docs/hardcoded_paths_inventory.md)** - Catalog of paths to refactor (62+ instances)
+- **[Duplicate Code Analysis](docs/duplicate_code_analysis.md)** - Notebook/script pairs and repeated code patterns
+- **[Deprecated Code Inventory](docs/deprecated_code_inventory.md)** - Legacy code to archive
+
+### Additional Resources
+- **[Action Plan](docs/Action_Plan.md)** - Original project plan and technologies used
+- **[Private Docs](docs/private_docs/)** - Original project proposal and requirements
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Python 3.x
+- Apache Spark (PySpark)
+- PostgreSQL
+- AWS account (for RDS, S3, EC2)
+
+### Key Technologies
+- **Data Processing**: PySpark, pandas, numpy
+- **Machine Learning**: scikit-learn, XGBoost, PyCaret, MLflow
+- **NLP**: spaCy, Gensim, NLTK, Spark NLP, fastText
+- **Database**: PostgreSQL (AWS RDS), SQLAlchemy
+- **Visualization**: Matplotlib, Seaborn, D-tale
+
+### Project Structure
+```
+├── src/                    # Production scripts (1.x ETL, 2.x NLP, 4.x+ ML)
+├── notebooks/              # Jupyter notebooks (exploration & development)
+├── models/                 # Trained models (base, final, NLP)
+├── data/
+│   ├── full_data/         # Complete dataset (~10GB)
+│   └── example_data/      # Sample data for testing
+├── docs/                  # All documentation
+└── images/                # Plots and diagrams
+```
+
+### Current Status
+
+**⚠️ Project is in Phase 1 of refactoring:**
+- Phase 1: Discovery & Documentation ✅ (In Progress)
+- Phase 2: Configuration Management (Next)
+- Phase 3: Code Standards & Cleanup
+- Phase 4+: Modernization & Testing
+
+See [TODO.md](TODO.md) for detailed progress and upcoming work.
 
 <br/><br/>
 

@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment variables
+.env
+.env.local
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# GitHub Copilot
+.github/
+
+# Data files (too large for git)
+data/full_data/original_json/*.json
+data/full_data/original_json_2024/*.json
+data/full_data/original_json_2024/*.zip
+data/full_data/original_json_2024/*.tar
+data/full_data/original_json_2024/photos/
+data/full_data/model_ready/*.csv
+data/full_data/final_predict/*.csv
+data/example_data/*.csv
+data/parquet_2021/
+data/processed/
+data/
+
+# Model files (too large for git)
+*.joblib
+forest_sklearn_base_model_1M.joblib
+models/nlp/fasttext_model_ALL/
+fasttext_model_ALL/
+models/nlp/LDA_model_1M/
+models/nlp/NB_TFIDF_all/
+models/nlp/SVM_TFIDF_all/
+models/base_models/*.joblib
+models/final_models/*.joblib
+pycaret/
+
+# Private documentation
+private_docs/
+docs/private_docs/
+
+# Legacy/Archive (for reference only, don't modify)
+archive/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+mlruns/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
