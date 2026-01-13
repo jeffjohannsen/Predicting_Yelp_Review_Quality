@@ -2,37 +2,13 @@
 
 # Predicting Yelp Review Quality
 
-> **Project Status**: Two-Phase Approach  
-> **Phase 1** (Current): Refactoring 2020-era academic ML pipeline for code quality and structure  
-> **Phase 2** (Future): SOTA rebuild with transformers/LLMs and performance comparison
+> **Archived Project (2019-2020, cleaned up 2026)**
 >
-> See [TODO.md](TODO.md) for active work and [CRITICAL_DECISIONS.md](docs/CRITICAL_DECISIONS.md) for architectural rationale
-
----
-
-## 📖 About This Project
-
-This project represents **two distinct approaches** to predicting Yelp review quality:
-
-### Phase 1: Classical ML Approach (2020-Era)
-Original academic capstone project using traditional feature engineering and classical NLP:
-- **Methodology**: 80+ manually engineered features from text, metadata, and temporal patterns
-- **NLP Techniques**: TF-IDF, FastText embeddings, LDA topic modeling, spaCy linguistic analysis
-- **Models**: Logistic Regression, Random Forest, XGBoost (sklearn)
-- **Status**: Being refactored for code quality while preserving original methodology
-- **Value**: Demonstrates deep understanding of classical ML and feature engineering
-
-### Phase 2: Modern SOTA Approach (2025) - Coming Soon
-Rebuild using state-of-the-art NLP/ML techniques:
-- **Methodology**: Transformer-based embeddings with minimal feature engineering
-- **NLP Techniques**: BERT/sentence-transformers (384-dim embeddings replace 80+ features)
-- **Models**: Fine-tuned transformers or simple neural nets on embeddings
-- **Goal**: Compare classical vs modern approaches, quantify improvements
-- **Value**: Shows evolution of NLP methods and current best practices
-
-**Why Both?** Understanding the progression from classical to modern ML is crucial for knowing when to use which approach. This project demonstrates both.
-
----
+> This project was originally developed in 2019-2020, before the widespread adoption of Large Language Models (LLMs) and Generative AI. The techniques demonstrated here—TF-IDF, word embeddings (FastText), topic modeling (LDA), and traditional ML classifiers—represent the **pre-transformer era** of NLP.
+>
+> While these methods achieved ~90% accuracy on the review quality prediction task, modern approaches using BERT, GPT embeddings, or fine-tuned LLMs would likely outperform them with less feature engineering. This repository is preserved as a learning resource and historical reference for classical NLP/ML pipelines.
+>
+> **2026 Cleanup**: Code refactored from PostgreSQL/AWS to local Parquet files, dependencies modernized, MLflow/PyCaret removed. See inline "2026 Update" notes for specific changes.
 
 ## Table of Contents
 * [Introduction](#Introduction)
@@ -51,7 +27,6 @@ Rebuild using state-of-the-art NLP/ML techniques:
     * [Model Setup](#Model-Setup)
     * [Model Results](#Model-Results)
 * [Conclusions](#Conclusions)
-* [Project Documentation](#project-documentation)
 * [Photo and Data Credits](#Photo-and-Data-Credits)
 
 <br/><br/>
@@ -118,8 +93,9 @@ This dataset consists of 5 separate json files totaling ~10GB of data uncompress
 
 My original data came in 5 json files. The first step was to simplify, combine, and store these files in a way that would be easily searchable for future data analysis, cleaning, and feature engineering.
 
-The main Extract, Transform, Load (ETL) Pipeline utilized Apache Spark to convert the original json files into a Postgres Database hosted on AWS RDS. 
+The main Extract, Transform, Load (ETL) Pipeline utilized Apache Spark to convert the original json files into a Postgres Database hosted on AWS RDS.
 
+> **2026 Update**: The pipeline has been refactored to use local Parquet files instead of PostgreSQL/AWS RDS for simplified deployment and reduced infrastructure dependencies.
 
 ![Data Storage Process](images/pyspark_etl_pipeline.png)
 
@@ -234,6 +210,8 @@ In order to learn more about the review text I created over 100 new features usi
 
 ![NLP Features](images/nlp_features.png)
 
+> **2026 Update**: Spark NLP has been removed from the pipeline. The current implementation uses spaCy for linguistic analysis (POS, NER, dependencies), Gensim for LDA topic modeling, and FastText for word embeddings.
+
 NLP features added include:
 * Basic Text Features
     * Review Length, Word Count, etc.
@@ -258,7 +236,9 @@ NLP features added include:
 
 ## Model Setup
 
-Throughout the multiple versions of this project, various machine learning models were tested and compared along with multiple dimensionality reduction techniques. PyCaret was used for quick model comparison and testing. Sklearn was used to build the final models. 
+Throughout the multiple versions of this project, various machine learning models were tested and compared along with multiple dimensionality reduction techniques. PyCaret was used for quick model comparison and testing. Sklearn was used to build the final models.
+
+> **2026 Update**: PyCaret and MLflow have been removed from the pipeline. The refactored codebase uses scikit-learn directly with LogisticRegressionCV, XGBoost, and LinearRegression for the final models.
 
 ### Note About Model Performance Metrics and Decision Threshold
 
@@ -300,102 +280,6 @@ Using feature importances and other methods for determining the most important f
 
 <br/><br/>
 
-# Project Documentation
-
-## 📚 Technical Documentation
-
-This project has comprehensive technical documentation for developers and contributors:
-
-### Core Documentation
-- **[TODO.md](TODO.md)** - Active project management, current sprint, and refactoring roadmap
-- **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Complete project guide for AI assistants (technology stack, architecture, coding standards)
-
-### Pipeline & Architecture
-- **[File Dependencies](docs/file_dependencies.md)** - Complete pipeline execution order and file dependencies
-- **[Pipeline Flow Diagram](docs/pipeline_flow_diagram.md)** - Visual representation of data flow through all stages
-- **[Data Schemas](docs/data_schemas.md)** - JSON, PostgreSQL, and CSV data structures
-
-### Models & Performance
-- **[Model Catalog](docs/model_catalog.md)** - All trained models, performance metrics, and usage instructions
-
-### Code Quality & Refactoring
-- **[Hardcoded Paths Inventory](docs/hardcoded_paths_inventory.md)** - Catalog of paths to refactor (62+ instances)
-- **[Duplicate Code Analysis](docs/duplicate_code_analysis.md)** - Notebook/script pairs and repeated code patterns
-- **[Deprecated Code Inventory](docs/deprecated_code_inventory.md)** - Legacy code to archive
-
-### Additional Resources
-- **[Action Plan](docs/Action_Plan.md)** - Original project plan and technologies used
-- **[Private Docs](docs/private_docs/)** - Original project proposal and requirements
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.x
-- Apache Spark (PySpark)
-- PostgreSQL
-- AWS account (for RDS, S3, EC2)
-
-### Key Technologies
-- **Data Processing**: PySpark, pandas, numpy
-- **Machine Learning**: scikit-learn, XGBoost, PyCaret, MLflow
-- **NLP**: spaCy, Gensim, NLTK, Spark NLP, fastText
-- **Database**: PostgreSQL (AWS RDS), SQLAlchemy
-- **Visualization**: Matplotlib, Seaborn, D-tale
-
-### Project Structure
-```
-├── src/                    # Production scripts
-│   ├── utils/             # NEW - Reusable utilities (time_discount, spark_helpers)
-│   ├── config.py          # NEW - Centralized configuration
-│   └── [1.x-11.x scripts] # Pipeline stages (ETL, NLP, ML)
-├── notebooks/              # Jupyter notebooks (exploration & viz)
-├── models/                 # Trained models (base, final, NLP)
-├── data/
-│   ├── parquet_2021/      # NEW - Parquet format data (6.7 GB)
-│   ├── processed/         # NEW - Pipeline outputs
-│   └── full_data/         # Original JSON data (~10GB)
-├── docs/                  # Comprehensive documentation (12 files)
-├── archive/               # Preserved legacy code
-└── images/                # Plots and diagrams
-```
-
-### Documentation
-
-**Quick Links**:
-- [STATUS.md](docs/STATUS.md) - Current project status and next steps
-- [TODO.md](TODO.md) - Detailed task tracking and roadmap
-- [CRITICAL_DECISIONS.md](docs/CRITICAL_DECISIONS.md) - Architectural decisions and rationale
-
-**Phase 1 Documentation** (2020-Era Refactoring):
-- [CODE_STRUCTURE.md](docs/CODE_STRUCTURE.md) - Codebase organization analysis
-- [PIPELINE_ANALYSIS.md](docs/PIPELINE_ANALYSIS.md) - Pipeline flow and dependencies
-- [DATA_INVENTORY.md](docs/DATA_INVENTORY.md) - Complete data catalog
-- [STORAGE_STRATEGY.md](docs/STORAGE_STRATEGY.md) - Parquet vs PostgreSQL rationale
-- [data_schemas.md](docs/data_schemas.md) - Full schema documentation
-- [model_catalog.md](docs/model_catalog.md) - 8533 model experiments tracked
-
-**Technical Details**:
-- [hardcoded_paths_inventory.md](docs/hardcoded_paths_inventory.md) - Path refactoring needs
-- [duplicate_code_analysis.md](docs/duplicate_code_analysis.md) - Code consolidation opportunities
-- [deprecated_code_inventory.md](docs/deprecated_code_inventory.md) - Legacy code catalog
-- [file_dependencies.md](docs/file_dependencies.md) - Pipeline execution order
-
-### Current Status
-
-**Phase 1 - 2020-Era Refactoring (Active)**:
-- ✅ Stage 0: Foundation complete (data conversion, config, docs)
-- 🔄 Stage 1: ETL refactoring (90% - testing pending)
-- ⏳ Stages 2-8: NLP and ML refactoring (queued)
-
-**Phase 2 - SOTA Rebuild (Planned)**:
-- Modern transformer-based approach (BERT/sentence-transformers)
-- Side-by-side comparison with Phase 1
-- Performance benchmarks and analysis
-
-See [STATUS.md](docs/STATUS.md) for detailed progress tracking.
-
-<br/><br/>
-
 # Conclusions
 ### 1. The quality of reviews can be determined with an accuracy better than chance.
 ### 2. Data about the review text and the user creating the review are the most important to consider when predicting the quality of a review.
@@ -414,3 +298,4 @@ Knowing that the quality of reviews can be predicted, as well as which pieces of
     * Machine Learning by Angela from the Noun Project
     * data storage by Alone forever from the Noun Project
     * JSON by Smashicons from flaticon
+

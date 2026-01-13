@@ -13,62 +13,44 @@ dist/
 build/
 *.egg
 
-# Environment variables
+# Environment variables (legacy - not used)
 .env
 .env.local
+.env.example
 
 # Jupyter Notebook
-.ipynb_checkpoints
-*.ipynb_checkpoints/
+.ipynb_checkpoints/
 
-# VS Code
+# IDE
 .vscode/
 *.code-workspace
+.idea/
 
-# GitHub Copilot
-.github/
+# Claude Code
+.claude/
 
-# Data files (too large for git)
-data/full_data/original_json/*.json
-data/full_data/original_json_2024/*.json
-data/full_data/original_json_2024/*.zip
-data/full_data/original_json_2024/*.tar
-data/full_data/original_json_2024/photos/
-data/full_data/model_ready/*.csv
-data/full_data/final_predict/*.csv
-data/example_data/*.csv
-data/parquet_2021/
-data/processed/
+# Data (too large for git)
 data/
 
-# Model files (too large for git)
+# Models (too large for git)
+models/
 *.joblib
-forest_sklearn_base_model_1M.joblib
-models/nlp/fasttext_model_ALL/
-fasttext_model_ALL/
-models/nlp/LDA_model_1M/
-models/nlp/NB_TFIDF_all/
-models/nlp/SVM_TFIDF_all/
-models/base_models/*.joblib
-models/final_models/*.joblib
-pycaret/
 
 # Private documentation
-private_docs/
 docs/private_docs/
 
-# Legacy/Archive (for reference only, don't modify)
-archive/
-
-# macOS
-.DS_Store
-
-# Logs
+# Generated/Temporary
 *.log
-mlruns/
-
-# Temporary files
 *.tmp
 *.swp
 *.swo
 *~
+mlruns/
+mlflow.db
+
+# macOS
+.DS_Store
+
+# Legacy
+archive/
+pycaret/

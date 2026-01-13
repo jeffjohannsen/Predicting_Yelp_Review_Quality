@@ -35,6 +35,7 @@ Date: December 2025
 """
 
 import sys
+import argparse
 from pathlib import Path
 
 # Add src to path for imports
@@ -54,12 +55,7 @@ from pyspark.sql.types import (
 )
 
 # Import project utilities
-from config import (
-    get_parquet_business,
-    get_parquet_checkin,
-    get_parquet_review,
-    get_parquet_user,
-)
+from config import PathConfig
 from utils.spark_helpers import create_spark_session, stop_spark_session
 from utils.time_discount import TimeDiscountCalculator
 
@@ -70,12 +66,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_parquet_data(spark):
+def load_parquet_data(spark, sample_size=None):
     """
     Load all Parquet files from data/parquet_2021/ directory.
 
     Args:
         spark: SparkSession
+        sample_size: Optional limit for review data (for testing). If None, loads all.
 
     Returns:
         Tuple of (df_business, df_checkin, df_review, df_user)
@@ -83,16 +80,20 @@ def load_parquet_data(spark):
     logger.info("Loading Parquet data files...")
 
     try:
-        df_business = spark.read.parquet(get_parquet_business())
+        df_business = spark.read.parquet(str(PathConfig.get_parquet_business()))
         logger.info(f"Loaded business data: {df_business.count():,} records")
 
-        df_checkin = spark.read.parquet(get_parquet_checkin())
+        df_checkin = spark.read.parquet(str(PathConfig.get_parquet_checkin()))
         logger.info(f"Loaded checkin data: {df_checkin.count():,} records")
 
-        df_review = spark.read.parquet(get_parquet_review())
-        logger.info(f"Loaded review data: {df_review.count():,} records")
+        df_review = spark.read.parquet(str(PathConfig.get_parquet_review()))
+        if sample_size:
+            df_review = df_review.limit(sample_size)
+            logger.info(f"Loaded review data (SAMPLE: {sample_size:,}): {df_review.count():,} records")
+        else:
+            logger.info(f"Loaded review data: {df_review.count():,} records")
 
-        df_user = spark.read.parquet(get_parquet_user())
+        df_user = spark.read.parquet(str(PathConfig.get_parquet_user()))
         logger.info(f"Loaded user data: {df_user.count():,} records")
 
         return df_business, df_checkin, df_review, df_user
@@ -102,7 +103,7 @@ def load_parquet_data(spark):
         raise
 
 
-def process_checkin_data(df_checkin):
+def process_checkin_data(df_checkin, spark):
     """
     Process checkin data to extract count and min/max dates.
 
@@ -110,6 +111,7 @@ def process_checkin_data(df_checkin):
 
     Args:
         df_checkin: Raw checkin DataFrame
+        spark: SparkSession
 
     Returns:
         Processed DataFrame with business_id, num_checkins, checkin_min, checkin_max
@@ -121,9 +123,9 @@ def process_checkin_data(df_checkin):
     df_checkin_final = spark.sql(
         """
         SELECT business_id,
-            size(date) AS num_checkins,
-            array_min(date) AS checkin_min,
-            array_max(date) AS checkin_max
+            size(date_array) AS num_checkins,
+            array_min(date_array) AS checkin_min,
+            array_max(date_array) AS checkin_max
         FROM df_checkin
     """
     )
@@ -132,7 +134,7 @@ def process_checkin_data(df_checkin):
     return df_checkin_final
 
 
-def process_user_data(df_user):
+def process_user_data(df_user, spark):
     """
     Process user data to aggregate features and handle elite years.
 
@@ -144,6 +146,7 @@ def process_user_data(df_user):
 
     Args:
         df_user: Raw user DataFrame
+        spark: SparkSession
 
     Returns:
         Processed DataFrame with user features
@@ -208,12 +211,13 @@ def process_user_data(df_user):
     return df_user_final
 
 
-def process_business_data(df_business):
+def process_business_data(df_business, spark):
     """
     Process business data to select relevant features.
 
     Args:
         df_business: Raw business DataFrame
+        spark: SparkSession
 
     Returns:
         Processed DataFrame with business features
@@ -239,7 +243,7 @@ def process_business_data(df_business):
     return df_business_final
 
 
-def process_review_data(df_review):
+def process_review_data(df_review, spark):
     """
     Process review data to create initial targets and extract vote counts.
 
@@ -248,6 +252,7 @@ def process_review_data(df_review):
 
     Args:
         df_review: Raw review DataFrame
+        spark: SparkSession
 
     Returns:
         Processed DataFrame with review features and raw vote counts
@@ -369,18 +374,20 @@ def apply_time_discounting(df, spark):
     """
     logger.info("Applying time discounting to features...")
 
-    # Create TimeDiscountCalculator instance
-    calc = TimeDiscountCalculator()
-
     # Register UDFs for time discounting
     # PERFORMANCE NOTE: Python UDFs serialize data between Python/JVM for each row
     # This is slow but maintains code clarity and matches original methodology
     # For 10x speedup, refactor to Pandas UDFs (see backlog in TODO.md)
     # Current implementation: ~2-4 hours for 8M reviews (acceptable for batch processing)
+    # 
+    # IMPORTANT: Create calculator inside each UDF to avoid serialization issues
+    # Workers need to be able to import utils.time_discount module
 
     # Target time discount UDF
     @F.udf(returnType=FloatType())
     def udf_target_td(ufc_total, review_date):
+        from utils.time_discount import TimeDiscountCalculator
+        calc = TimeDiscountCalculator()
         if ufc_total is None or review_date is None:
             return 0.0
         return float(calc.target_time_discount(int(ufc_total), review_date))
@@ -388,6 +395,8 @@ def apply_time_discounting(df, spark):
     # User time discount UDF
     @F.udf(returnType=FloatType())
     def udf_user_td(count_val, user_since, review_date):
+        from utils.time_discount import TimeDiscountCalculator
+        calc = TimeDiscountCalculator()
         if count_val is None or user_since is None or review_date is None:
             return 0.0
         return float(calc.user_time_discount(float(count_val), user_since, review_date))
@@ -395,6 +404,8 @@ def apply_time_discounting(df, spark):
     # Business time discount UDF
     @F.udf(returnType=FloatType())
     def udf_business_td(count_val, review_date):
+        from utils.time_discount import TimeDiscountCalculator
+        calc = TimeDiscountCalculator()
         if count_val is None or review_date is None:
             return 0.0
         return float(calc.business_time_discount(float(count_val), review_date))
@@ -402,6 +413,8 @@ def apply_time_discounting(df, spark):
     # Elite count time discount UDF
     @F.udf(returnType=IntegerType())
     def udf_elite_count_td(elite_array, review_date):
+        from utils.time_discount import TimeDiscountCalculator
+        calc = TimeDiscountCalculator()
         if elite_array is None or review_date is None or len(elite_array) == 0:
             return 0
         # Convert array to comma-separated string for function
@@ -411,6 +424,8 @@ def apply_time_discounting(df, spark):
     # Years since elite UDF
     @F.udf(returnType=IntegerType())
     def udf_years_since_elite_td(elite_array, review_date):
+        from utils.time_discount import TimeDiscountCalculator
+        calc = TimeDiscountCalculator()
         if elite_array is None or review_date is None or len(elite_array) == 0:
             return 100
         elite_str = ",".join(map(str, elite_array))
@@ -419,6 +434,8 @@ def apply_time_discounting(df, spark):
     # Usefulness level UDF
     @F.udf(returnType=StringType())
     def udf_usefulness_level(ufc_count):
+        from utils.time_discount import TimeDiscountCalculator
+        calc = TimeDiscountCalculator()
         if ufc_count is None:
             return "zero"
         return calc.usefulness_level(float(ufc_count))
@@ -523,33 +540,87 @@ def apply_time_discounting(df, spark):
     return df
 
 
-def create_data_splits(df, spark, seed=12345):
+def create_data_splits(df, spark, seed=12345, temporal_split=True):
     """
     Split data into train, test, and holdout sets.
 
-    Uses same split strategy as original:
-    1. First split: 80% working, 20% holdout
-    2. Second split: 80% train, 20% test (from working data)
+    TEMPORAL SPLIT (temporal_split=True, RECOMMENDED):
+    - Sorts by review_date chronologically
+    - Train: Oldest 70% (prevents future leakage)
+    - Test: Next 15% (realistic future validation)
+    - Holdout: Most recent 15% (final holdout on newest data)
+    - Ensures no temporal leakage for time-series data
+
+    RANDOM SPLIT (temporal_split=False, LEGACY):
+    - Uses randomSplit (original methodology)
+    - Results in 64/16/20 split due to nested splits
+    - ⚠️ Warning: Can cause temporal leakage
 
     Args:
         df: DataFrame with all features
         spark: SparkSession
         seed: Random seed for reproducibility (default: 12345)
+        temporal_split: If True, use temporal split; if False, use random (default: True)
 
     Returns:
         Tuple of (train_data, test_data, holdout_data)
     """
     logger.info("Creating train/test/holdout splits...")
 
-    # First split: working vs holdout
-    working_data, holdout_data = df.randomSplit([0.8, 0.2], seed=seed)
-    logger.info(f"  Working data: {working_data.count():,} records")
-    logger.info(f"  Holdout data: {holdout_data.count():,} records")
+    if temporal_split:
+        logger.info("  Using TEMPORAL split (no future leakage)...")
 
-    # Second split: train vs test
-    train_data, test_data = working_data.randomSplit([0.8, 0.2], seed=seed)
-    logger.info(f"  Train data: {train_data.count():,} records")
-    logger.info(f"  Test data: {test_data.count():,} records")
+        # Sort by review date
+        df_sorted = df.orderBy("review_date")
+        total_count = df_sorted.count()
+
+        # Calculate split points
+        train_cutoff = int(total_count * 0.70)
+        test_cutoff = int(total_count * 0.85)  # 70% + 15%
+
+        # Create row numbers
+        from pyspark.sql.window import Window
+        window = Window.orderBy("review_date")
+        df_with_row_num = df_sorted.withColumn("row_num", F.row_number().over(window))
+
+        # Split by row number (temporal order)
+        train_data = df_with_row_num.filter(F.col("row_num") <= train_cutoff).drop("row_num")
+        test_data = df_with_row_num.filter(
+            (F.col("row_num") > train_cutoff) & (F.col("row_num") <= test_cutoff)
+        ).drop("row_num")
+        holdout_data = df_with_row_num.filter(F.col("row_num") > test_cutoff).drop("row_num")
+
+        logger.info(f"  Train data: {train_data.count():,} records (oldest 70%)")
+        logger.info(f"  Test data: {test_data.count():,} records (next 15%)")
+        logger.info(f"  Holdout data: {holdout_data.count():,} records (newest 15%)")
+
+        # Show date ranges
+        train_dates = train_data.select(
+            F.min("review_date").alias("min"), F.max("review_date").alias("max")
+        ).collect()[0]
+        test_dates = test_data.select(
+            F.min("review_date").alias("min"), F.max("review_date").alias("max")
+        ).collect()[0]
+        holdout_dates = holdout_data.select(
+            F.min("review_date").alias("min"), F.max("review_date").alias("max")
+        ).collect()[0]
+
+        logger.info(f"  Train dates: {train_dates['min']} to {train_dates['max']}")
+        logger.info(f"  Test dates: {test_dates['min']} to {test_dates['max']}")
+        logger.info(f"  Holdout dates: {holdout_dates['min']} to {holdout_dates['max']}")
+
+    else:
+        logger.info("  Using RANDOM split (legacy method)...")
+        logger.warning("  ⚠️ Random split may cause temporal leakage!")
+
+        # Original random split (legacy)
+        working_data, holdout_data = df.randomSplit([0.8, 0.2], seed=seed)
+        logger.info(f"  Working data: {working_data.count():,} records")
+        logger.info(f"  Holdout data: {holdout_data.count():,} records")
+
+        train_data, test_data = working_data.randomSplit([0.8, 0.2], seed=seed)
+        logger.info(f"  Train data: {train_data.count():,} records")
+        logger.info(f"  Test data: {test_data.count():,} records")
 
     return train_data, test_data, holdout_data
 
@@ -576,7 +647,7 @@ def separate_text_and_non_text_features(df, spark):
             review_stars,
             review_text,
             T1_REG_review_total_ufc,
-            T2_CLS_ufc_>0,
+            `T2_CLS_ufc_>0`,
             T3_CLS_ufc_level,
             T4_REG_ufc_TD,
             T5_CLS_ufc_level_TD,
@@ -622,7 +693,7 @@ def separate_text_and_non_text_features(df, spark):
             user_years_since_elite_TD,
             user_yelping_since,
             T1_REG_review_total_ufc,
-            T2_CLS_ufc_>0,
+            `T2_CLS_ufc_>0`,
             T3_CLS_ufc_level,
             T4_REG_ufc_TD,
             T5_CLS_ufc_level_TD,
@@ -634,7 +705,7 @@ def separate_text_and_non_text_features(df, spark):
     return text_data, non_text_data
 
 
-def save_to_parquet(df, output_dir, dataset_name):
+def save_to_parquet(df, output_dir, dataset_name, spark):
     """
     Save DataFrame to Parquet with compression.
 
@@ -642,6 +713,7 @@ def save_to_parquet(df, output_dir, dataset_name):
         df: DataFrame to save
         output_dir: Base output directory (e.g., "data/processed/01_etl_output")
         dataset_name: Name for this dataset (e.g., "train_text", "test_non_text")
+        spark: SparkSession
     """
     output_path = f"{output_dir}/{dataset_name}.parquet"
     logger.info(f"  Saving {dataset_name} to {output_path}...")
@@ -655,106 +727,245 @@ def save_to_parquet(df, output_dir, dataset_name):
         raise
 
 
-def main():
+def log_stage(stage_num, total_stages, stage_name, status="START"):
+    """Log stage progress with clear visual markers."""
+    if status == "START":
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info(f"STAGE {stage_num}/{total_stages}: {stage_name}")
+        logger.info("=" * 80)
+    elif status == "DONE":
+        logger.info(f"✓ STAGE {stage_num}/{total_stages} COMPLETE: {stage_name}")
+        logger.info("-" * 80)
+
+
+def main(sample_size=None):
     """
     Main ETL pipeline execution.
+
+    Args:
+        sample_size: Number of reviews to process. None = full dataset (~8.6M).
     """
+    TOTAL_STAGES = 8
     start_time = datetime.now()
+    stage_times = {}
+
+    logger.info("")
     logger.info("=" * 80)
-    logger.info(
-        "Starting ETL Pipeline - Stage 1: Data Preparation with Time Discounting"
-    )
+    logger.info("  YELP REVIEW ETL PIPELINE - Stage 1: Data Preparation")
+    logger.info("=" * 80)
+    logger.info(f"  Started at:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"  Sample size:  {sample_size if sample_size else 'FULL DATASET (~8.6M reviews)'}")
+    logger.info(f"  Total stages: {TOTAL_STAGES}")
     logger.info("=" * 80)
 
     global spark  # Make spark accessible to UDFs
 
     try:
-        # 1. Create Spark session
+        # STAGE 1: Create Spark session
+        log_stage(1, TOTAL_STAGES, "Initialize Spark Session")
+        stage_start = datetime.now()
+
+        src_path = str(Path(__file__).parent)
+        import os
+        current_pythonpath = os.environ.get('PYTHONPATH', '')
+        pythonpath = f"{src_path}:{current_pythonpath}" if current_pythonpath else src_path
+
+        # Memory-safe configuration for 4GB available RAM
+        # Key settings:
+        # - 1500m heap leaves ~500MB for OS overhead
+        # - memory.fraction=0.4 reserves 60% for execution/shuffle (vs default 0.6)
+        # - shuffle.partitions=200 creates smaller chunks that fit in memory
+        # - offHeap disabled to avoid additional memory pressure
+        # - shuffle.spill.compress=true reduces disk I/O when spilling
         spark = create_spark_session(
-            app_name="Yelp_ETL_v2",
-            memory_driver="8g",
-            memory_executor="8g",
+            app_name="Yelp_ETL_Data_Prep",
+            memory_driver="1500m",
+            memory_executor="1500m",
             log_level="WARN",
+            **{
+                "spark.executorEnv.PYTHONPATH": pythonpath,
+                "spark.yarn.appMasterEnv.PYTHONPATH": pythonpath,
+                # Memory management - aggressive spill-to-disk
+                "spark.memory.fraction": "0.4",
+                "spark.memory.storageFraction": "0.2",
+                "spark.sql.shuffle.partitions": "200",
+                # Disk spill settings
+                "spark.shuffle.spill.compress": "true",
+                "spark.shuffle.compress": "true",
+                # Reduce parallelism to avoid memory spikes
+                "spark.default.parallelism": "4",
+                # Broadcast threshold - smaller to avoid large broadcasts
+                "spark.sql.autoBroadcastJoinThreshold": "10m",
+            }
         )
+        stage_times[1] = datetime.now() - stage_start
+        log_stage(1, TOTAL_STAGES, "Initialize Spark Session", "DONE")
 
-        # 2. Load Parquet data
-        df_business, df_checkin, df_review, df_user = load_parquet_data(spark)
+        # STAGE 2: Load Parquet data
+        log_stage(2, TOTAL_STAGES, "Load Parquet Data")
+        stage_start = datetime.now()
+        df_business, df_checkin, df_review, df_user = load_parquet_data(spark, sample_size=sample_size)
+        stage_times[2] = datetime.now() - stage_start
+        log_stage(2, TOTAL_STAGES, "Load Parquet Data", "DONE")
 
-        # 3. Process individual tables
-        df_checkin_final = process_checkin_data(df_checkin)
-        df_user_final = process_user_data(df_user)
-        df_business_final = process_business_data(df_business)
-        df_review_final = process_review_data(df_review)
+        # STAGE 3: Process individual tables
+        log_stage(3, TOTAL_STAGES, "Process Individual Tables")
+        stage_start = datetime.now()
+        df_checkin_final = process_checkin_data(df_checkin, spark)
+        df_user_final = process_user_data(df_user, spark)
+        df_business_final = process_business_data(df_business, spark)
+        df_review_final = process_review_data(df_review, spark)
+        stage_times[3] = datetime.now() - stage_start
+        log_stage(3, TOTAL_STAGES, "Process Individual Tables", "DONE")
 
-        # 4. Join all data
+        # STAGE 4: Join all data
+        log_stage(4, TOTAL_STAGES, "Join All Data Tables")
+        stage_start = datetime.now()
         all_data = join_all_data(
             df_review_final, df_user_final, df_business_final, df_checkin_final, spark
         )
 
-        # 5. Apply time discounting
+        # Memory optimization: Write intermediate result to disk and re-read
+        # This breaks the lineage and releases memory from previous DataFrames
+        if sample_size is None:  # Only for full dataset runs
+            logger.info("  Writing intermediate checkpoint to release memory...")
+            checkpoint_path = str(PathConfig.get_etl_output_dir() / "_checkpoint_joined")
+            all_data.write.mode("overwrite").parquet(checkpoint_path)
+            # Clear cached data and re-read from checkpoint
+            spark.catalog.clearCache()
+            all_data = spark.read.parquet(checkpoint_path)
+            logger.info("  Checkpoint written and reloaded")
+
+        stage_times[4] = datetime.now() - stage_start
+        log_stage(4, TOTAL_STAGES, "Join All Data Tables", "DONE")
+
+        # STAGE 5: Apply time discounting (slowest stage)
+        log_stage(5, TOTAL_STAGES, "Apply Time Discounting (SLOW - Python UDFs)")
+        stage_start = datetime.now()
         all_data_discounted = apply_time_discounting(all_data, spark)
 
-        # 6. Create train/test/holdout splits
+        # Memory optimization: Checkpoint after time discounting (heaviest operation)
+        if sample_size is None:  # Only for full dataset runs
+            logger.info("  Writing post-discounting checkpoint to release memory...")
+            checkpoint_path = str(PathConfig.get_etl_output_dir() / "_checkpoint_discounted")
+            all_data_discounted.write.mode("overwrite").parquet(checkpoint_path)
+            spark.catalog.clearCache()
+            all_data_discounted = spark.read.parquet(checkpoint_path)
+            logger.info("  Checkpoint written and reloaded")
+
+        stage_times[5] = datetime.now() - stage_start
+        log_stage(5, TOTAL_STAGES, "Apply Time Discounting", "DONE")
+
+        # STAGE 6: Create train/test/holdout splits
+        log_stage(6, TOTAL_STAGES, "Create Train/Test/Holdout Splits")
+        stage_start = datetime.now()
         train_data, test_data, holdout_data = create_data_splits(
             all_data_discounted, spark
         )
+        stage_times[6] = datetime.now() - stage_start
+        log_stage(6, TOTAL_STAGES, "Create Train/Test/Holdout Splits", "DONE")
 
-        # 7. Separate text and non-text features for each split
-        logger.info("Separating text and non-text features...")
+        # STAGE 7: Separate text and non-text features
+        log_stage(7, TOTAL_STAGES, "Separate Text and Non-Text Features")
+        stage_start = datetime.now()
 
-        train_text, train_non_text = separate_text_and_non_text_features(
-            train_data, spark
-        )
-        logger.info(
-            f"  Train - Text: {train_text.count():,}, Non-text: {train_non_text.count():,}"
-        )
+        train_text, train_non_text = separate_text_and_non_text_features(train_data, spark)
+        logger.info(f"  Train - Text: {train_text.count():,}, Non-text: {train_non_text.count():,}")
 
         test_text, test_non_text = separate_text_and_non_text_features(test_data, spark)
-        logger.info(
-            f"  Test - Text: {test_text.count():,}, Non-text: {test_non_text.count():,}"
-        )
+        logger.info(f"  Test - Text: {test_text.count():,}, Non-text: {test_non_text.count():,}")
 
-        holdout_text, holdout_non_text = separate_text_and_non_text_features(
-            holdout_data, spark
-        )
-        logger.info(
-            f"  Holdout - Text: {holdout_text.count():,}, Non-text: {holdout_non_text.count():,}"
-        )
+        holdout_text, holdout_non_text = separate_text_and_non_text_features(holdout_data, spark)
+        logger.info(f"  Holdout - Text: {holdout_text.count():,}, Non-text: {holdout_non_text.count():,}")
 
-        # 8. Save all datasets to Parquet
-        output_dir = "data/processed/01_etl_output"
-        logger.info(f"\nSaving all datasets to {output_dir}...")
+        stage_times[7] = datetime.now() - stage_start
+        log_stage(7, TOTAL_STAGES, "Separate Text and Non-Text Features", "DONE")
 
-        save_to_parquet(train_text, output_dir, "train_text")
-        save_to_parquet(train_non_text, output_dir, "train_non_text")
-        save_to_parquet(test_text, output_dir, "test_text")
-        save_to_parquet(test_non_text, output_dir, "test_non_text")
-        save_to_parquet(holdout_text, output_dir, "holdout_text")
-        save_to_parquet(holdout_non_text, output_dir, "holdout_non_text")
+        # STAGE 8: Save all datasets to Parquet
+        log_stage(8, TOTAL_STAGES, "Save All Datasets to Parquet")
+        stage_start = datetime.now()
+        output_dir = str(PathConfig.get_etl_output_dir())
+        logger.info(f"  Output directory: {output_dir}")
+
+        save_to_parquet(train_text, output_dir, "train_text", spark)
+        save_to_parquet(train_non_text, output_dir, "train_non_text", spark)
+        save_to_parquet(test_text, output_dir, "test_text", spark)
+        save_to_parquet(test_non_text, output_dir, "test_non_text", spark)
+        save_to_parquet(holdout_text, output_dir, "holdout_text", spark)
+        save_to_parquet(holdout_non_text, output_dir, "holdout_non_text", spark)
+
+        stage_times[8] = datetime.now() - stage_start
+        log_stage(8, TOTAL_STAGES, "Save All Datasets to Parquet", "DONE")
+
+        # Cleanup checkpoint files (only exist for full runs)
+        import shutil
+        for checkpoint_name in ["_checkpoint_joined", "_checkpoint_discounted"]:
+            checkpoint_path = PathConfig.get_etl_output_dir() / checkpoint_name
+            if checkpoint_path.exists():
+                logger.info(f"  Cleaning up checkpoint: {checkpoint_path}")
+                shutil.rmtree(checkpoint_path)
 
         # Success summary
-        elapsed = datetime.now() - start_time
+        total_elapsed = datetime.now() - start_time
+        logger.info("")
         logger.info("=" * 80)
-        logger.info("ETL Pipeline Complete!")
-        logger.info(f"Total execution time: {elapsed}")
+        logger.info("  ETL PIPELINE COMPLETE!")
         logger.info("=" * 80)
-        logger.info("\nOutput files created:")
-        logger.info(f"  {output_dir}/train_text.parquet")
-        logger.info(f"  {output_dir}/train_non_text.parquet")
-        logger.info(f"  {output_dir}/test_text.parquet")
-        logger.info(f"  {output_dir}/test_non_text.parquet")
-        logger.info(f"  {output_dir}/holdout_text.parquet")
-        logger.info(f"  {output_dir}/holdout_non_text.parquet")
+        logger.info(f"  Finished at:  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"  Total time:   {total_elapsed}")
+        logger.info("")
+        logger.info("  Stage Timings:")
+        for stage_num, stage_time in stage_times.items():
+            pct = (stage_time.total_seconds() / total_elapsed.total_seconds()) * 100
+            logger.info(f"    Stage {stage_num}: {stage_time} ({pct:.1f}%)")
+        logger.info("")
+        logger.info("  Output files:")
+        for f in ["train_text", "train_non_text", "test_text", "test_non_text", "holdout_text", "holdout_non_text"]:
+            logger.info(f"    {output_dir}/{f}.parquet")
+        logger.info("=" * 80)
 
     except Exception as e:
         logger.error(f"ETL Pipeline failed: {e}", exc_info=True)
         raise
 
     finally:
-        # Clean up
         if "spark" in globals():
             stop_spark_session(spark)
 
 
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Yelp Review ETL Pipeline - Stage 1: Data Preparation",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Test run with 1000 samples
+  python src/1_ETL_Data_Preparation.py --sample 1000
+
+  # Full dataset run (overnight)
+  python src/1_ETL_Data_Preparation.py --full
+
+  # Default (10000 samples for development)
+  python src/1_ETL_Data_Preparation.py
+        """
+    )
+    parser.add_argument(
+        "--sample", "-s",
+        type=int,
+        default=10000,
+        help="Number of reviews to process (default: 10000)"
+    )
+    parser.add_argument(
+        "--full", "-f",
+        action="store_true",
+        help="Process full dataset (~8.6M reviews). Overrides --sample."
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    sample_size = None if args.full else args.sample
+    main(sample_size=sample_size)
